@@ -1,0 +1,557 @@
+#include <avr/io.h>
+#include "util.h"
+
+    .section .vectors
+.org 0
+    rjmp _start
+    nop
+
+.set currentVectorNum, 1
+.rept (_VECTORS_SIZE >> 2) - 1
+    ldi r24, currentVectorNum << 1
+    rjmp _emitInterrupt
+    .set currentVectorNum, currentVectorNum + 1
+.endr
+
+    .section .text
+_start:
+    cli
+
+    clr r1
+
+    ldi r24, (1 << WDCE) | (1 << WDE)
+    wdr
+    sts _SFR_MEM_ADDR(WDTCSR), r24
+    sts _SFR_MEM_ADDR(WDTCSR), r1
+
+    ldi r24, lo8(RAMEND)
+    out _SFR_IO_ADDR(SPL), r24
+    ldi r24, hi8(RAMEND)
+    out _SFR_IO_ADDR(SPH), r24
+
+    out _SFR_IO_ADDR(RAMPZ), r1
+    out _SFR_IO_ADDR(EIND), r1
+
+    jmp start
+
+_emitInterrupt:
+    ldi YL, lo8(interrupts)
+    ldi YH, hi8(interrupts)
+    add YL, r24
+    adc YH, r1
+    ld ZL, Y
+    ldd ZH, Y + 1
+
+    lsr r24
+    eicall
+
+    reti
+
+#ifdef ALL_ASSEMBLY
+
+#define MAX_CALLBACKS 100
+
+/*
+typedef struct _IntervalCallback {
+    uint8_t arg;
+    uint16_t ticks;
+    uint16_t times;
+
+    uint32_t when;
+    struct _IntervalCallback* prev;
+    struct _IntervalCallback* next;
+    void (*callback)(uint8_t, bool);
+} IntervalCallback;
+*/
+#define IntervalCallback_arg 0
+#define IntervalCallback_ticks (IntervalCallback_arg + 1)
+#define IntervalCallback_times (IntervalCallback_ticks + 2)
+
+#define IntervalCallback_when (IntervalCallback_times + 2)
+#define IntervalCallback_prev (IntervalCallback_when + 4)
+#define IntervalCallback_next (IntervalCallback_prev + 2)
+#define IntervalCallback_callback (IntervalCallback_next + 2)
+#define sizeof_IntervalCallback (IntervalCallback_callback + 2)
+
+// static IntervalCallback callbacksBuffer[MAX_CALLBACKS];
+.lcomm callbacksBuffer, MAX_CALLBACKS * sizeof_IntervalCallback
+// static IntervalCallback* callbacksBufferTop;
+.lcomm callbacksBufferTop, 2
+
+// static uint32_t ticks;
+.lcomm ticks, 4
+// static IntervalCallback* callbacks;
+.lcomm callbacks, 2
+// static void (*interrupts[_VECTORS_SIZE >> 2])(uint8_t);
+.lcomm interrupts, 2 * (_VECTORS_SIZE >> 2)
+
+// void* setTimeout(void (*callback)(uint8_t), uint8_t arg, uint16_t milliseconds) {
+    .global setTimeout
+setTimeout:
+    push r16
+    push r17
+
+    // return setIntervalWithDelay((void (*)(uint8_t, bool))callback, arg, 0, milliseconds, 1);
+    movw r18, r20
+    ldi r16, lo8(1)
+    ldi r17, hi8(1)
+    ldi r20, lo8(0)
+    ldi r21, hi8(0)
+    call setIntervalWithDelay
+
+    pop r17
+    pop r16
+    ret
+// }
+
+// void* setInterval(void (*callback)(uint8_t, bool), uint8_t arg, uint16_t milliseconds, uint16_t times) {
+    .global setInterval
+setInterval:
+    push r16
+    push r17
+
+    // return setIntervalWithDelay(callback, arg, 0, milliseconds, times);
+    movw r16, r18
+    movw r18, r20
+    ldi r20, lo8(0)
+    ldi r21, hi8(0)
+    call setIntervalWithDelay
+
+    pop r17
+    pop r16
+    ret
+// }
+
+// void* setIntervalWithDelay(void (*callback)(uint8_t, bool), uint8_t arg, uint16_t delay, uint16_t milliseconds, uint16_t times) {
+    .global setIntervalWithDelay
+setIntervalWithDelay: // r25:r24: callback, r22: arg, r21:r20: delay, r19:r18: milliseconds, r17:r16: times
+    push YL
+    push YH
+
+    // Deallocate any cleared buffers
+    lds XL, callbacksBufferTop
+    lds XH, callbacksBufferTop + 1
+    ldi r23, hi8(callbacksBuffer)
+    // while (callbacksBufferTop > callbacksBuffer && callbacksBufferTop[-1].callback == 0)
+setIntervalWithDelay_deallocateClearedBuffers:
+    cpi XL, lo8(callbacksBuffer)
+    cpc XH, r23
+    breq setIntervalWithDelay_deallocateClearedBuffers_end // callbacksBufferTop > callbacksBuffer &&
+
+    movw YL, XL
+    sbiw YL, sizeof_IntervalCallback
+    ldd r30, Y + IntervalCallback_callback
+    cp r30, r1
+    ldd r30, Y + IntervalCallback_callback + 1
+    cpc r30, r1
+    brne setIntervalWithDelay_deallocateClearedBuffers_end // callbacksBufferTop[-1].callback == 0
+
+    //    --callbacksBufferTop;
+    movw XL, YL
+    rjmp setIntervalWithDelay_deallocateClearedBuffers
+setIntervalWithDelay_deallocateClearedBuffers_end:
+
+    // Abort if no more space
+    // if (callbacksBufferTop - callbacksBuffer >= MAX_CALLBACKS) {
+    ldi r23, hi8(callbacksBuffer + MAX_CALLBACKS)
+    cpi XL, lo8(callbacksBuffer + MAX_CALLBACKS)
+    cpc XH, r23
+    brlo setIntervalWithDelay_haveSpace
+
+    //    wdt_enable(WDTO_15MS);
+    //    while (1)
+    //        ;
+    ldi r23, (1 << WDCE) | (1 << WDE)
+    sts _SFR_MEM_ADDR(WDTCSR), r23
+    ldi r23, (1 << WDE)
+    sts _SFR_MEM_ADDR(WDTCSR), r23
+setIntervalWithDelay_abort:
+    rjmp setIntervalWithDelay_abort
+
+    // }
+setIntervalWithDelay_haveSpace:
+    // IntervalCallback* buffer = callbacksBufferTop++;
+    movw YL, XL
+    adiw XL, sizeof_IntervalCallback // At this point, Y is `buffer` and X is `callbacksBufferTop`
+    sts callbacksBufferTop, XL
+    sts callbacksBufferTop + 1, XH
+
+    // buffer->arg = arg;
+    std Y + IntervalCallback_arg, r22
+
+    // buffer->ticks = milliseconds >> 3; // 8 ticks per millisecond for 16 Hz
+    movw r22, r18
+    lsr r23
+    ror r22
+    lsr r23
+    ror r22
+    lsr r23
+    ror r22
+    std Y + IntervalCallback_ticks, r22
+    std Y + IntervalCallback_ticks + 1, r23
+
+    // buffer->times = times;
+    std Y + IntervalCallback_times, r16
+    std Y + IntervalCallback_times + 1, r17
+
+    // buffer->when = ticks + ((delay + milliseconds) >> 3);
+    add r18, r20
+    adc r19, r21
+    lsr r19
+    ror r18
+    lsr r19
+    ror r18
+    lsr r19
+    ror r18
+    lds r20, ticks
+    lds r21, ticks + 1
+    lds r22, ticks + 2
+    lds r23, ticks + 3
+    add r20, r18
+    adc r21, r19
+    adc r22, r1
+    adc r23, r1
+    std Y + IntervalCallback_when, r20
+    std Y + IntervalCallback_when + 1, r21
+    std Y + IntervalCallback_when + 2, r22
+    std Y + IntervalCallback_when + 3, r23
+
+    // buffer->callback = callback;
+    std Y + IntervalCallback_callback, r24
+    std Y + IntervalCallback_callback + 1, r25
+
+    // buffer->prev = 0;
+    std Y + IntervalCallback_prev, r1
+    std Y + IntervalCallback_prev + 1, r1
+
+    // if (callbacks) {
+    lds ZL, callbacks
+    lds ZH, callbacks + 1
+    sbiw ZL, 0
+    breq setIntervalWithDelay_noExistingCallbacks
+
+    //     buffer->next = callbacks;
+    std Y + IntervalCallback_next, ZL
+    std Y + IntervalCallback_next + 1, ZH
+    //     callbacks->prev = buffer;
+    std Z + IntervalCallback_prev, YL
+    std Z + IntervalCallback_prev + 1, YH
+
+    rjmp setIntervalWithDelay_pushCallback_end
+    // } else {
+setIntervalWithDelay_noExistingCallbacks:
+    //     buffer->next = 0;
+    std Y + IntervalCallback_next, r1
+    std Y + IntervalCallback_next + 1, r1
+
+    // }
+setIntervalWithDelay_pushCallback_end:
+    // callbacks = buffer;
+    sts callbacks, YL
+    sts callbacks + 1, YH
+
+    // return buffer;
+    movw r24, YL
+
+    pop YH
+    pop YL
+    ret
+// }
+
+// void clearInterval(void* interval) {
+    .global clearInterval
+clearInterval:
+    push YL
+    push YH
+
+    // IntervalCallback* buffer = interval;
+    movw YL, r24
+
+    ldd ZL, Y + IntervalCallback_prev
+    ldd ZH, Y + IntervalCallback_prev + 1
+    ldd XL, Y + IntervalCallback_next
+    ldd XH, Y + IntervalCallback_next + 1
+    // if (buffer->prev)
+    sbiw ZL, 0
+    breq clearInterval_noPreviousCallback
+
+    //     buffer->prev->next = buffer->next;
+    std Z + IntervalCallback_next, XL
+    std Z + IntervalCallback_next + 1, XH
+    rjmp clearInterval_updatePreviousCallback_end
+
+    // else
+clearInterval_noPreviousCallback:
+    //     callbacks = buffer->next;
+    sts callbacks, XL
+    sts callbacks + 1, XH
+
+clearInterval_updatePreviousCallback_end:
+    // if (buffer->next)
+    sbiw XL, 0
+    breq clearInterval_noNextCallback
+
+    //     buffer->next->prev = buffer->prev;
+    adiw XL, IntervalCallback_prev
+    st X+, ZL
+    st X, ZH
+
+clearInterval_noNextCallback:
+    // Mark buffer for cleanup
+    // buffer->callback = 0;
+    std Y + IntervalCallback_callback, r1
+    std Y + IntervalCallback_callback + 1, r1
+
+    pop YH
+    pop YL
+    ret
+// }
+
+// void onInterrupt(uint8_t vectorNumber, void (*callback)(uint8_t)) {
+    .global onInterrupt
+onInterrupt:
+    // interrupts[vectorNumber] = callback;
+    mov ZL, r24
+    ldi ZH, 0
+    lsl ZL
+    rol ZH
+    subi ZL, lo8(-(interrupts))
+    sbci ZH, hi8(-(interrupts))
+    std Z + 0, r22
+    std Z + 1, r23
+    ret
+// }
+
+// static void onTick() {
+onTick:
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+    push r16
+    push r17
+    push YL
+    push YH
+
+    lds r16, ticks
+    lds r17, ticks + 1
+    lds r18, ticks + 2
+    lds r19, ticks + 3
+    // while (TCNT5 >= 125) {
+onTick_clearTickCounter_start:
+    lds r20, _SFR_MEM_ADDR(TCNT5L)
+    lds r21, _SFR_MEM_ADDR(TCNT5H)
+    subi r20, 125
+    sbc r21, r1
+    brlo onTick_clearTickCounter_end
+
+    //     TCNT5 -= 125;
+    sts _SFR_MEM_ADDR(TCNT5L), r20
+    sts _SFR_MEM_ADDR(TCNT5H), r21
+
+    //     ++ticks;
+    subi r16, lo8(-1)
+    sbci r17, hi8(-1)
+    sbci r18, hlo8(-1)
+    sbci r19, hhi8(-1)
+
+    rjmp onTick_clearTickCounter_start
+    // }
+onTick_clearTickCounter_end:
+    sts ticks, r16
+    sts ticks + 1, r17
+    sts ticks + 2, r18
+    sts ticks + 3, r19
+    movw r14, r18
+
+    //out _SFR_IO_ADDR(PORTC), r16
+
+    lds YL, callbacks
+    lds YH, callbacks + 1
+    // for (IntervalCallback* buffer = callbacks; buffer; buffer = buffer->next)
+onTick_iterateCallbacks_start:
+    sbiw YL, 0
+    SKIP2_IF(ne)
+    jmp onTick_end
+
+    //     if (ticks >= buffer->when) {
+    ldd r18, Y + IntervalCallback_when
+    ldd r19, Y + IntervalCallback_when + 1
+    ldd r20, Y + IntervalCallback_when + 2
+    ldd r21, Y + IntervalCallback_when + 3
+    cp r16, r18
+    cpc r17, r19
+    cpc r14, r20
+    cpc r15, r21
+    brlo onTick_iterateCallbacks_next
+
+    //         buffer->when += buffer->ticks;
+    ldd r26, Y + IntervalCallback_ticks
+    ldd r27, Y + IntervalCallback_ticks + 1
+    add r18, r26
+    adc r19, r27
+    adc r20, r1
+    adc r21, r1
+    std Y + IntervalCallback_when, r18
+    std Y + IntervalCallback_when + 1, r19
+    std Y + IntervalCallback_when + 2, r20
+    std Y + IntervalCallback_when + 3, r21
+
+    //         void (*callback)(uint8_t, bool) = buffer->callback;
+    ldd r12, Y + IntervalCallback_callback
+    ldd r13, Y + IntervalCallback_callback + 1
+
+    //         uint8_t arg = buffer->arg;
+    ldd r10, Y + IntervalCallback_arg
+
+    //         bool isLastTime = buffer->times == 1;
+    ldd r24, Y + IntervalCallback_times
+    ldd r25, Y + IntervalCallback_times + 1
+    clr r11
+    cpi r24, 1
+    cpc r25, r1
+    SKIP_IF(ne)
+    inc r11
+
+    //         if (isLastTime) {
+    tst r11
+    brz onTick_iterateCallbacks_notLastTime
+
+    //             // Clear callback first to not run out of callback buffer memory if setIntervalWithDelay() is called
+    //             IntervalCallback* prev = buffer->prev;
+    ldd r22, Y + IntervalCallback_prev
+    ldd r23, Y + IntervalCallback_prev + 1
+
+    //             clearInterval(buffer);
+    //             buffer = prev;
+    movw r24, YL
+    movw YL, r22
+    call clearInterval
+    rjmp onTick_iterateCallbacks_checkLastTime_end
+
+    //         } else if (buffer->times > 0) {
+onTick_iterateCallbacks_notLastTime:
+    cp r24, r1
+    cpc r25, r1
+    breq onTick_iterateCallbacks_checkLastTime_end
+
+    //             --buffer->times;
+    sbiw r24, 1
+    std Y + IntervalCallback_times, r24
+    std Y + IntervalCallback_times + 1, r25
+
+    //         }
+onTick_iterateCallbacks_checkLastTime_end:
+
+    //         callback(arg, isLastTime);
+    mov r24, r10
+    mov r22, r11
+    movw ZL, r12
+    eicall
+
+    //         if (!buffer)
+    //             break;
+    sbiw YL, 0
+    breq onTick_end
+
+onTick_iterateCallbacks_next: // (buffer = buffer->next)
+    ldd r0, Y + IntervalCallback_next
+    ldd YH, Y + IntervalCallback_next + 1
+    mov YL, r0
+    rjmp onTick_iterateCallbacks_start
+
+onTick_end:
+    pop YH
+    pop YL
+    pop r17
+    pop r16
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    ret
+
+// static void unhandledInterrupt(uint8_t vectorNum) {
+unhandledInterrupt:
+    // PORTC = vectorNum;
+    out _SFR_IO_ADDR(PORTC), r24
+    ret
+// }
+
+// static void start() {
+start:
+
+    // Clear RAM
+    // for (uint8_t* b = (uint8_t*)0x200; b < (uint8_t*)RAMEND; ++b)
+    //     *b = 0;
+    ldi ZL, lo8(0x200)
+    ldi ZH, hi8(0x200)
+    ldi r24, hi8(RAMEND)
+start_clearRam_start:
+    st Z+, r1
+    cpi ZL, lo8(RAMEND)
+    cpc ZH, r24
+    brne start_clearRam_start
+
+    // callbacksBufferTop = callbacksBuffer;
+    ldi r24, lo8(callbacksBuffer)
+    ldi r25, hi8(callbacksBuffer)
+    sts callbacksBufferTop, r24
+    sts callbacksBufferTop + 1, r25
+
+    // for (uint8_t i = 0; i < (_VECTORS_SIZE >> 2); ++i)
+    //     interrupts[i] = unhandledInterrupt;
+    ldi ZL, lo8(interrupts)
+    ldi ZH, hi8(interrupts)
+    ldi r24, lo8(gs(unhandledInterrupt))
+    ldi r25, hi8(gs(unhandledInterrupt))
+    ldi r23, hi8(interrupts + 2 * (_VECTORS_SIZE >> 2))
+start_setupUnhandledInterrupts_start:
+    st Z+, r24
+    st Z+, r25
+    cpi ZL, lo8(interrupts + 2 * (_VECTORS_SIZE >> 2))
+    cpc ZH, r23
+    brne start_setupUnhandledInterrupts_start
+
+    // Setup Timer5 to interrupt every 1024 * 125 cycles
+    // TCCR5B = (1 << CS52) | (1 << CS50);
+    ldi r24, (1 << CS52) | (1 << CS50)
+    sts _SFR_MEM_ADDR(TCCR5B), r24
+
+    // OCR5A = 125;
+    ldi r24, 125
+    sts _SFR_MEM_ADDR(OCR5AL), r24
+    sts _SFR_MEM_ADDR(OCR5AH), r1
+
+    // TIMSK5 = (1 << OCIE5A);
+    ldi r24, (1 << OCIE5A)
+    sts _SFR_MEM_ADDR(TIMSK5), r24
+
+    // onInterrupt(TIMER5_COMPA_vect_num, (void (*)(uint8_t))onTick);
+    ldi r22, lo8(gs(onTick))
+    ldi r23, hi8(gs(onTick))
+    ldi r24, TIMER5_COMPA_vect_num
+    call onInterrupt
+
+    // setup();
+    call setup
+
+    // set_sleep_mode(SLEEP_MODE_IDLE);
+    ldi r24, (1 << SE)
+    out _SFR_IO_ADDR(SMCR), r24
+
+    // sei();
+    sei
+
+    // while (1)
+    //     sleep_cpu();
+start_sleep:
+    sleep
+    rjmp start_sleep
+// }
+
+#endif
