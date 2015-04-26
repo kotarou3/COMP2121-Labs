@@ -366,8 +366,6 @@ onTick_clearTickCounter_end:
     sts ticks + 3, r19
     movw r14, r18
 
-    //out _SFR_IO_ADDR(PORTC), r16
-
     lds YL, callbacks
     lds YH, callbacks + 1
     // for (IntervalCallback* buffer = callbacks; buffer; buffer = buffer->next)
