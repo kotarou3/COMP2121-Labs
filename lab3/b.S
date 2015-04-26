@@ -8,13 +8,7 @@
     rjmp start
 
 .org TIMER0_COMPA_vect_num << 2
-    push r24
-    in r24, _SFR_IO_ADDR(SREG)
-    push r24
-    push r25
-
-    clr r24
-    out _SFR_IO_ADDR(TCNT0), r24
+    out _SFR_IO_ADDR(TCNT0), r1
 
     lds r24, counter
     inc r24
@@ -36,10 +30,6 @@
 timer0_ret:
     sts counter, r24
 
-    pop r25
-    pop r24
-    out _SFR_IO_ADDR(SREG), r24
-    pop r24
     reti
 
 start:
@@ -51,7 +41,7 @@ start:
     ldi r24, hi8(RAMEND)
     out _SFR_IO_ADDR(SPH), r24
 
-    // Enable Timer0 scaled by 1024 and interrupts on reaching 125
+    // Setup Timer0 to interrupt every 1024 * 125 cycles
     ldi r24, (1 << CS02) | (1 << CS00)
     out _SFR_IO_ADDR(TCCR0B), r24
     ldi r24, 125
