@@ -1,0 +1,69 @@
+diff --git a/events.S b/events.S
+index b113a4b..deb275c 100644
+--- a/events.S
++++ b/events.S
+@@ -1,5 +1,5 @@
+ #include <avr/io.h>
+-#include "util.h"
++#include "../util.h"
+ 
+     .section .vectors
+ .org 0
+@@ -339,17 +339,14 @@ onTick:
+     lds r17, ticks + 1
+     lds r18, ticks + 2
+     lds r19, ticks + 3
+-    // while (TCNT5 >= 125) {
++    // while (TCNT0 >= 125) {
+ onTick_clearTickCounter_start:
+-    lds r20, _SFR_MEM_ADDR(TCNT5L)
+-    lds r21, _SFR_MEM_ADDR(TCNT5H)
++    lds r20, _SFR_MEM_ADDR(TCNT0)
+     subi r20, 125
+-    sbc r21, r1
+     brlo onTick_clearTickCounter_end
+ 
+-    //     TCNT5 -= 125;
+-    sts _SFR_MEM_ADDR(TCNT5L), r20
+-    sts _SFR_MEM_ADDR(TCNT5H), r21
++    //     TCNT0 -= 125;
++    sts _SFR_MEM_ADDR(TCNT0), r20
+ 
+     //     ++ticks;
+     subi r16, lo8(-1)
+@@ -515,24 +512,23 @@ start_setupUnhandledInterrupts_start:
+     cpc ZH, r23
+     brne start_setupUnhandledInterrupts_start
+ 
+-    // Setup Timer5 to interrupt every 1024 * 125 cycles
+-    // TCCR5B = (1 << CS52) | (1 << CS50);
+-    ldi r24, (1 << CS52) | (1 << CS50)
+-    sts _SFR_MEM_ADDR(TCCR5B), r24
++    // Setup Timer0 to interrupt every 1024 * 125 cycles
++    // TCCR0B = (1 << CS02) | (1 << CS00);
++    ldi r24, (1 << CS02) | (1 << CS00)
++    sts _SFR_MEM_ADDR(TCCR0B), r24
+ 
+-    // OCR5A = 125;
++    // OCR0A = 125;
+     ldi r24, 125
+-    sts _SFR_MEM_ADDR(OCR5AL), r24
+-    sts _SFR_MEM_ADDR(OCR5AH), r1
++    sts _SFR_MEM_ADDR(OCR0A), r24
+ 
+-    // TIMSK5 = (1 << OCIE5A);
+-    ldi r24, (1 << OCIE5A)
+-    sts _SFR_MEM_ADDR(TIMSK5), r24
++    // TIMSK0 = (1 << OCIE0A);
++    ldi r24, (1 << OCIE0A)
++    sts _SFR_MEM_ADDR(TIMSK0), r24
+ 
+-    // onInterrupt(TIMER5_COMPA_vect_num, (void (*)(uint8_t))onTick);
++    // onInterrupt(TIMER0_COMPA_vect_num, (void (*)(uint8_t))onTick);
+     ldi r22, lo8(gs(onTick))
+     ldi r23, hi8(gs(onTick))
+-    ldi r24, TIMER5_COMPA_vect_num
++    ldi r24, TIMER0_COMPA_vect_num
+     call onInterrupt
+ 
+     // setup();
