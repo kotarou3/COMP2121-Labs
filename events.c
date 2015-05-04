@@ -9,6 +9,7 @@
 #include "events.h"
 
 #define MAX_CALLBACKS 100
+#define MILLISECONDS_TO_TICKS(a) ((a) >> 3) // 8 ticks per millisecond for 16 Hz
 
 typedef struct _IntervalCallback {
     uint8_t arg;
@@ -50,9 +51,9 @@ void* setIntervalWithDelay(void (*callback)(uint8_t, bool), uint8_t arg, uint16_
 
     IntervalCallback* buffer = callbacksBufferTop++;
     buffer->arg = arg;
-    buffer->ticks = milliseconds >> 3; // 8 ticks per millisecond for 16 Hz
+    buffer->ticks = MILLISECONDS_TO_TICKS(milliseconds);
     buffer->times = times;
-    buffer->when = ticks + ((delay + milliseconds) >> 3);
+    buffer->when = ticks + MILLISECONDS_TO_TICKS(delay + milliseconds);
     buffer->callback = callback;
 
     buffer->prev = 0;

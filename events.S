@@ -179,7 +179,8 @@ setIntervalWithDelay_haveSpace:
     // buffer->arg = arg;
     std Y + IntervalCallback_arg, r22
 
-    // buffer->ticks = milliseconds >> 3; // 8 ticks per millisecond for 16 Hz
+    // #define MILLISECONDS_TO_TICKS(a) ((a) >> 3) // 8 ticks per millisecond for 16 Hz
+    // buffer->ticks = MILLISECONDS_TO_TICKS(milliseconds);
     movw r22, r18
     lsr r23
     ror r22
@@ -194,7 +195,7 @@ setIntervalWithDelay_haveSpace:
     std Y + IntervalCallback_times, r16
     std Y + IntervalCallback_times + 1, r17
 
-    // buffer->when = ticks + ((delay + milliseconds) >> 3);
+    // buffer->when = MILLISECONDS_TO_TICKS(delay + milliseconds);
     add r18, r20
     adc r19, r21
     lsr r19
