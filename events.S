@@ -74,7 +74,7 @@ typedef struct _IntervalCallback {
 #define sizeof_IntervalCallback (IntervalCallback_callback + 2)
 
 // static IntervalCallback callbacksBuffer[MAX_CALLBACKS];
-.lcomm callbacksBuffer, MAX_CALLBACKS * sizeof_IntervalCallback
+.lcomm callbacksBuffer, sizeof_IntervalCallback * MAX_CALLBACKS
 // static IntervalCallback* callbacksBufferTop;
 .lcomm callbacksBufferTop, 2
 
