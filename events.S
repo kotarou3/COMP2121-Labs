@@ -47,9 +47,26 @@ _emitInterrupt:
 
     reti
 
-#ifdef ALL_ASSEMBLY
+#ifndef ALL_ASSEMBLY
+
+// GCC needs these for jump tables
+    .global __tablejump2__
+__tablejump2__:
+    lsl ZL
+    rol ZH
+    .global __tablejump__
+__tablejump__:
+    lpm r0, Z+
+    lpm ZH, Z
+    mov ZL, r0
+    ijmp
+
+#else
+
+#include "events.h"
 
 #define MAX_CALLBACKS 100
+#define DEBOUNCE_TIME 30
 
 /*
 typedef struct _IntervalCallback {
@@ -73,6 +90,16 @@ typedef struct _IntervalCallback {
 #define IntervalCallback_callback (IntervalCallback_next + 2)
 #define sizeof_IntervalCallback (IntervalCallback_callback + 2)
 
+/*
+typedef struct _DebounceCallback {
+    void* timeout;
+    void (*callback)(uint8_t);
+} DebounceCallback;
+*/
+#define DebounceCallback_timeout 0
+#define DebounceCallback_callback (DebounceCallback_timeout + 2)
+#define sizeof_DebounceCallback (DebounceCallback_callback + 2)
+
 // static IntervalCallback callbacksBuffer[MAX_CALLBACKS];
 .lcomm callbacksBuffer, sizeof_IntervalCallback * MAX_CALLBACKS
 // static IntervalCallback* callbacksBufferTop;
@@ -84,6 +111,8 @@ typedef struct _IntervalCallback {
 .lcomm callbacks, 2
 // static void (*interrupts[_VECTORS_SIZE >> 2])(uint8_t);
 .lcomm interrupts, 2 * (_VECTORS_SIZE >> 2)
+// static DebounceCallback debounceCallbacks[PCINT2_vect_num - INT0_vect_num + 1];
+.lcomm debounceCallbacks, sizeof_DebounceCallback * (PCINT2_vect_num - INT0_vect_num + 1)
 
 // void* setTimeout(void (*callback)(uint8_t), uint8_t arg, uint16_t milliseconds) {
     .global setTimeout
@@ -321,6 +350,235 @@ onInterrupt:
     std Z + 0, r22
     std Z + 1, r23
     ret
+// }
+
+// static void debounceEnd(uint8_t vectorNumber) {
+debounceEnd:
+
+    // bool isPinHigh = false;
+    clr r25
+
+    // switch (vectorNumber) {
+    mov ZL, r24
+    lsl ZL
+    clr ZH
+    subi ZL, lo8(-(debounceEnd_switch_jumptable - INT0_vect_num * 2))
+    sbci ZH, hi8(-(debounceEnd_switch_jumptable - INT0_vect_num * 2))
+    lpm r0, Z+
+    lpm ZH, Z
+    mov ZL, r0
+    eijmp
+
+debounceEnd_switch_jumptable:
+    .word gs(debounceEnd_switch_case_int0)
+    .word gs(debounceEnd_switch_case_int1)
+    .word gs(debounceEnd_switch_case_int2)
+    .word gs(debounceEnd_switch_case_int3)
+    .word gs(debounceEnd_switch_case_int4)
+    .word gs(debounceEnd_switch_case_int5)
+    .word gs(debounceEnd_switch_case_int6)
+    .word gs(debounceEnd_switch_case_int7)
+    .word gs(debounceEnd_switch_case_pcint0)
+    .word gs(debounceEnd_switch_case_pcint1)
+    .word gs(debounceEnd_switch_case_pcint2)
+
+    //     case INT0_vect_num:
+debounceEnd_switch_case_int0:
+    //         isPinHigh = PIND & (1 << PD0);
+    //         break;
+	in r25, _SFR_IO_ADDR(PIND)
+	andi r25, 1 << PD0
+	rjmp debounceEnd_switch_end
+
+    //     case INT1_vect_num:
+debounceEnd_switch_case_int1:
+    //         isPinHigh = PIND & (1 << PD1);
+    //         break;
+	in r25, _SFR_IO_ADDR(PIND)
+	andi r25, 1 << PD1
+	rjmp debounceEnd_switch_end
+
+    //     case INT2_vect_num:
+debounceEnd_switch_case_int2:
+    //         isPinHigh = PIND & (1 << PD2);
+    //         break;
+	in r25, _SFR_IO_ADDR(PIND)
+	andi r25, 1 << PD2
+	rjmp debounceEnd_switch_end
+
+    //     case INT3_vect_num:
+debounceEnd_switch_case_int3:
+    //         isPinHigh = PIND & (1 << PD3);
+    //         break;
+	in r25, _SFR_IO_ADDR(PIND)
+	andi r25, 1 << PD3
+	rjmp debounceEnd_switch_end
+
+    //     case INT4_vect_num:
+debounceEnd_switch_case_int4:
+    //         isPinHigh = PINE & (1 << PE4);
+    //         break;
+	in r25, _SFR_IO_ADDR(PINE)
+	andi r25, 1 << PE4
+	rjmp debounceEnd_switch_end
+
+    //     case INT5_vect_num:
+debounceEnd_switch_case_int5:
+    //         isPinHigh = PINE & (1 << PE5);
+    //         break;
+	in r25, _SFR_IO_ADDR(PINE)
+	andi r25, 1 << PE5
+	rjmp debounceEnd_switch_end
+
+    //     case INT6_vect_num:
+debounceEnd_switch_case_int6:
+    //         isPinHigh = PINE & (1 << PE6);
+    //         break;
+	in r25, _SFR_IO_ADDR(PINE)
+	andi r25, 1 << PE6
+	rjmp debounceEnd_switch_end
+
+    //     case INT7_vect_num:
+debounceEnd_switch_case_int7:
+    //         isPinHigh = PINE & (1 << PE7);
+    //         break;
+	in r25, _SFR_IO_ADDR(PINE)
+	andi r25, 1 << PE7
+	rjmp debounceEnd_switch_end
+
+    //     case PCINT0_vect_num:
+debounceEnd_switch_case_pcint0:
+    //         isPinHigh = PINB == 0xff; // Only when all of the pins are high
+    //         break;
+    in r22, _SFR_IO_ADDR(PINB)
+    cpi r22, 0xff
+    SKIP_IF(ne)
+    inc r25
+	rjmp debounceEnd_switch_end
+
+    //     case PCINT1_vect_num:
+debounceEnd_switch_case_pcint1:
+    //         isPinHigh = (((PINJ & ~(1 << PJ7)) << 1) | (PINE & (1 << PE0))) == 0xff;
+    //         break;
+    lds r22, _SFR_MEM_ADDR(PINJ)
+    andi r22, ~(1 << PJ7)
+    lsl r22
+    in r23, _SFR_IO_ADDR(PINE)
+    andi r23, 1 << PE0
+    or r22, r23
+    cpi r22, 0xff
+    inc r25
+	rjmp debounceEnd_switch_end
+
+    //     case PCINT2_vect_num:
+debounceEnd_switch_case_pcint2:
+    //         isPinHigh = PINK == 0xff;
+    //         break;
+    lds r22, _SFR_MEM_ADDR(PINK)
+    cpi r22, 0xff
+    SKIP_IF(ne)
+    inc r25
+
+    // }
+debounceEnd_switch_end:
+
+    // DebounceCallback* callbackInfo = &debounceCallbacks[vectorNumber - INT0_vect_num];
+    mov ZL, r24
+    clr ZH
+    lsl ZL
+    rol ZH
+    lsl ZL
+    rol ZH
+    subi ZL, lo8(-(debounceCallbacks - (INT0_vect_num * 4)))
+    sbci ZH, hi8(-(debounceCallbacks - (INT0_vect_num * 4)))
+
+    // callbackInfo->timeout = 0;
+    std Z + DebounceCallback_timeout, r1
+    std Z + DebounceCallback_timeout + 1, r1
+
+    // if (!isPinHigh) // Is the button still held down?
+    tst r25
+    brnz debounceEnd_end
+
+    //     callbackInfo->callback(vectorNumber);
+    ldd r0, Z + DebounceCallback_callback
+    ldd ZH, Z + DebounceCallback_callback + 1
+    mov ZL, r0
+    eijmp
+
+debounceEnd_end:
+    ret
+// }
+
+// static void debounceStart(uint8_t vectorNumber) {
+debounceStart:
+    push r16
+    push YL
+    push YH
+    mov r16, r24
+
+    // DebounceCallback* callbackInfo = &debounceCallbacks[vectorNumber - INT0_vect_num];
+    mov YL, r24
+    clr YH
+    lsl YL
+    rol YH
+    lsl YL
+    rol YH
+    subi YL, lo8(-(debounceCallbacks - (INT0_vect_num * 4)))
+    sbci YH, hi8(-(debounceCallbacks - (INT0_vect_num * 4)))
+
+    // if (callbackInfo->timeout)
+    ldd r24, Y + DebounceCallback_timeout
+    ldd r25, Y + DebounceCallback_timeout + 1
+    sbiw r24, 0
+    breq debounceStart_noExistingDebounce
+
+    //     clearTimeout(callbackInfo->timeout);
+    call clearTimeout
+
+debounceStart_noExistingDebounce:
+    // callbackInfo->timeout = setTimeout(debounceEnd, vectorNumber, DEBOUNCE_TIME);
+    ldi r20, lo8(DEBOUNCE_TIME)
+    ldi r21, hi8(DEBOUNCE_TIME)
+    mov r22, r16
+    ldi r24, lo8(gs(debounceEnd))
+    ldi r25, hi8(gs(debounceEnd))
+    call setTimeout
+    std Y + DebounceCallback_timeout, r24
+    std Y + DebounceCallback_timeout + 1, r25
+
+    pop YH
+    pop YL
+    pop r16
+    ret
+// }
+
+// void onDebouncedInterrupt(uint8_t vectorNumber, void (*callback)(uint8_t)) {
+    .global onDebouncedInterrupt
+onDebouncedInterrupt:
+
+    // DebounceCallback* callbackInfo = &debounceCallbacks[vectorNumber - INT0_vect_num];
+    mov ZL, r24
+    clr ZH
+    lsl ZL
+    rol ZH
+    lsl ZL
+    rol ZH
+    subi ZL, lo8(-(debounceCallbacks - (INT0_vect_num * 4)))
+    sbci ZH, hi8(-(debounceCallbacks - (INT0_vect_num * 4)))
+
+    // callbackInfo->timeout = 0;
+    std Z + DebounceCallback_timeout, r1
+    std Z + DebounceCallback_timeout + 1, r1
+
+    // callbackInfo->callback = callback;
+    std Z + DebounceCallback_callback, r22
+    std Z + DebounceCallback_callback + 1, r23
+
+    // onInterrupt(vectorNumber, debounceStart);
+	ldi r22, lo8(gs(debounceStart))
+	ldi r23, hi8(gs(debounceStart))
+	jmp onInterrupt
 // }
 
 // static void onTick() {

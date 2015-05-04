@@ -10,6 +10,7 @@
 
 #define MAX_CALLBACKS 100
 #define MILLISECONDS_TO_TICKS(a) ((a) >> 3) // 8 ticks per millisecond for 16 Hz
+#define DEBOUNCE_TIME 30
 
 typedef struct _IntervalCallback {
     uint8_t arg;
@@ -22,6 +23,11 @@ typedef struct _IntervalCallback {
     void (*callback)(uint8_t, bool);
 } IntervalCallback;
 
+typedef struct _DebounceCallback {
+    void* timeout;
+    void (*callback)(uint8_t);
+} DebounceCallback;
+
 static IntervalCallback callbacksBuffer[MAX_CALLBACKS];
 static IntervalCallback* callbacksBufferTop;
 
@@ -29,6 +35,8 @@ static uint32_t ticks;
 static IntervalCallback* callbacks;
 
 /*static*/ void (*interrupts[_VECTORS_SIZE >> 2])(uint8_t); // events.S needs access, so not static
+static DebounceCallback debounceCallbacks[PCINT2_vect_num - INT0_vect_num + 1];
+
 
 void* setTimeout(void (*callback)(uint8_t), uint8_t arg, uint16_t milliseconds) {
     return setIntervalWithDelay((void (*)(uint8_t, bool))callback, arg, 0, milliseconds, 1);
@@ -85,6 +93,66 @@ void clearInterval(void* interval) {
 
 void onInterrupt(uint8_t vectorNumber, void (*callback)(uint8_t)) {
     interrupts[vectorNumber] = callback;
+}
+
+static void debounceEnd(uint8_t vectorNumber) {
+    bool isPinHigh = false;
+
+    switch (vectorNumber) {
+        case INT0_vect_num:
+            isPinHigh = PIND & (1 << PD0);
+            break;
+        case INT1_vect_num:
+            isPinHigh = PIND & (1 << PD1);
+            break;
+        case INT2_vect_num:
+            isPinHigh = PIND & (1 << PD2);
+            break;
+        case INT3_vect_num:
+            isPinHigh = PIND & (1 << PD3);
+            break;
+        case INT4_vect_num:
+            isPinHigh = PINE & (1 << PE4);
+            break;
+        case INT5_vect_num:
+            isPinHigh = PINE & (1 << PE5);
+            break;
+        case INT6_vect_num:
+            isPinHigh = PINE & (1 << PE6);
+            break;
+        case INT7_vect_num:
+            isPinHigh = PINE & (1 << PE7);
+            break;
+        case PCINT0_vect_num:
+            isPinHigh = PINB == 0xff; // Only when all of the pins are high
+            break;
+        case PCINT1_vect_num:
+            isPinHigh = (((PINJ & ~(1 << PJ7)) << 1) | (PINE & (1 << PE0))) == 0xff;
+            break;
+        case PCINT2_vect_num:
+            isPinHigh = PINK == 0xff;
+            break;
+    }
+
+    DebounceCallback* callbackInfo = &debounceCallbacks[vectorNumber - INT0_vect_num];
+    callbackInfo->timeout = 0;
+
+    if (!isPinHigh) // Is the button still held down?
+        callbackInfo->callback(vectorNumber);
+}
+
+static void debounceStart(uint8_t vectorNumber) {
+    DebounceCallback* callbackInfo = &debounceCallbacks[vectorNumber - INT0_vect_num];
+    if (callbackInfo->timeout)
+        clearTimeout(callbackInfo->timeout);
+    callbackInfo->timeout = setTimeout(debounceEnd, vectorNumber, DEBOUNCE_TIME);
+}
+
+void onDebouncedInterrupt(uint8_t vectorNumber, void (*callback)(uint8_t)) {
+    DebounceCallback* callbackInfo = &debounceCallbacks[vectorNumber - INT0_vect_num];
+    callbackInfo->timeout = 0;
+    callbackInfo->callback = callback;
+    onInterrupt(vectorNumber, debounceStart);
 }
 
 static void onTick() {

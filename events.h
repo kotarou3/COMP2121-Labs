@@ -14,6 +14,9 @@ void clearInterval(void* interval);
 
 void onInterrupt(uint8_t vectorNumber, void (*callback)(uint8_t));
 
+// Falling edge trigger must be enabled. Will callback on a debounced falling edge.
+void onDebouncedInterrupt(uint8_t vectorNumber, void (*callback)(uint8_t));
+
 #else
 
 #define clearTimeout clearInterval

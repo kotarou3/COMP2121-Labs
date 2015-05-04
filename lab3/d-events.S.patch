@@ -1,5 +1,5 @@
 diff --git a/events.S b/events.S
-index b113a4b..deb275c 100644
+index 901c2be..d0c9d55 100644
 --- a/events.S
 +++ b/events.S
 @@ -1,5 +1,5 @@
@@ -9,7 +9,16 @@ index b113a4b..deb275c 100644
  
      .section .vectors
  .org 0
-@@ -339,17 +339,14 @@ onTick:
+@@ -63,7 +63,7 @@ __tablejump__:
+ 
+ #else
+ 
+-#include "events.h"
++#include "../events.h"
+ 
+ #define MAX_CALLBACKS 100
+ #define DEBOUNCE_TIME 30
+@@ -598,17 +598,14 @@ onTick:
      lds r17, ticks + 1
      lds r18, ticks + 2
      lds r19, ticks + 3
@@ -31,7 +40,7 @@ index b113a4b..deb275c 100644
  
      //     ++ticks;
      subi r16, lo8(-1)
-@@ -515,24 +512,23 @@ start_setupUnhandledInterrupts_start:
+@@ -774,24 +771,23 @@ start_setupUnhandledInterrupts_start:
      cpc ZH, r23
      brne start_setupUnhandledInterrupts_start
  
