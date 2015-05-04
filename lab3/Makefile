@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 all: a b d
 clean:
-	rm a b d d-events.S
+	rm -f a b d d-events.S
 
 a: a.S
 	$(ASSEMBLER) a.S -o a
