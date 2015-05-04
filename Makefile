@@ -2,8 +2,6 @@ include Makefile.inc
 
 DIRS = $(wildcard */)
 
-.PHONY: all clean
-
 all: port-querier
 	$(foreach DIR, $(DIRS), $(MAKE) all -C $(DIR) &&) true
 

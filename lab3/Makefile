@@ -1,7 +1,5 @@
 include ../Makefile.inc
 
-.PHONY: all clean
-
 all: a b d
 clean:
 	rm a b d d-events.S
