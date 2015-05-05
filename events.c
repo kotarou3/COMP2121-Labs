@@ -9,7 +9,7 @@
 #include "events.h"
 
 #define MAX_CALLBACKS 100
-#define MILLISECONDS_TO_TICKS(a) ((a) >> 3) // 8 ticks per millisecond for 16 Hz
+#define MILLISECONDS_TO_TICKS(a) (((a) + 7) >> 3) // 8 ticks per millisecond for 16 Hz
 #define DEBOUNCE_TIME 30
 
 typedef struct _IntervalCallback {
