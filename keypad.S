@@ -18,8 +18,17 @@
 #define KEYPAD_INT(reg, ...) reg##0##__VA_ARGS__
 #define KEYPAD_INT_PINS(reg) reg##B
 
-// static char keymap[4][4];
-.lcomm keymap, 4 * 4
+// static const char keymap[4][4] PROGMEM = {
+//     {'1', '2', '3', 'A'},
+//     {'4', '5', '6', 'B'},
+//     {'7', '8', '9', 'C'},
+//     {'*', '0', '#', 'D'}
+// };
+keymap:
+    .byte '1', '2', '3', 'A'
+    .byte '4', '5', '6', 'B'
+    .byte '7', '8', '9', 'C'
+    .byte '*', '0', '#', 'D'
 
 // static void (*onKeypadPressCallback)(char);
 .lcomm onKeypadPressCallback, 2
@@ -118,23 +127,23 @@ onPress_gotInput:
     // else if (input & (1 << KEYPAD_COL3))
     //     col = 3;
     sbrc r22, KEYPAD_COL3
-    ldi XL, 3
+    ldi ZL, 3
     sbrc r22, KEYPAD_COL2
-    ldi XL, 2
+    ldi ZL, 2
     sbrc r22, KEYPAD_COL1
-    ldi XL, 1
+    ldi ZL, 1
     sbrc r22, KEYPAD_COL0
-    ldi XL, 0
+    ldi ZL, 0
 
     // Call the callback
     // onKeypadPressCallback(keymap[row][col]);
     lsl r24
     lsl r24
-    add XL, r24
-    clr XH
-    subi XL, lo8(-(keymap))
-    sbci XH, hi8(-(keymap))
-    ld r24, X
+    add ZL, r24
+    clr ZH
+    subi ZL, lo8(-(keymap))
+    sbci ZH, hi8(-(keymap))
+    lpm r24, Z
     lds ZL, onKeypadPressCallback
     lds ZH, onKeypadPressCallback + 1
     eijmp
@@ -159,58 +168,6 @@ onKeypadPress:
 // void keypadSetup() {
     .global keypadSetup
 keypadSetup:
-
-    // keymap[0][0] = '1';
-    // keymap[0][1] = '2';
-    // keymap[0][2] = '3';
-    // keymap[0][3] = 'A';
-    ldi r24, '1'
-    sts keymap + 0 * 4 + 0, r24
-    ldi r24, '2'
-    sts keymap + 0 * 4 + 1, r24
-    ldi r24, '3'
-    sts keymap + 0 * 4 + 2, r24
-    ldi r24, 'A'
-    sts keymap + 0 * 4 + 3, r24
-
-    // keymap[1][0] = '4';
-    // keymap[1][1] = '5';
-    // keymap[1][2] = '6';
-    // keymap[1][3] = 'B';
-    ldi r24, '4'
-    sts keymap + 1 * 4 + 0, r24
-    ldi r24, '5'
-    sts keymap + 1 * 4 + 1, r24
-    ldi r24, '6'
-    sts keymap + 1 * 4 + 2, r24
-    ldi r24, 'B'
-    sts keymap + 1 * 4 + 3, r24
-
-    // keymap[2][0] = '7';
-    // keymap[2][1] = '8';
-    // keymap[2][2] = '9';
-    // keymap[2][3] = 'C';
-    ldi r24, '7'
-    sts keymap + 2 * 4 + 0, r24
-    ldi r24, '8'
-    sts keymap + 2 * 4 + 1, r24
-    ldi r24, '9'
-    sts keymap + 2 * 4 + 2, r24
-    ldi r24, 'C'
-    sts keymap + 2 * 4 + 3, r24
-
-    // keymap[3][0] = '*';
-    // keymap[3][1] = '0';
-    // keymap[3][2] = '#';
-    // keymap[3][3] = 'D';
-    ldi r24, '*'
-    sts keymap + 3 * 4 + 0, r24
-    ldi r24, '0'
-    sts keymap + 3 * 4 + 1, r24
-    ldi r24, '#'
-    sts keymap + 3 * 4 + 2, r24
-    ldi r24, 'D'
-    sts keymap + 3 * 4 + 3, r24
 
     // KEYPAD(DDR) = KEYPAD_ROWS;
     // KEYPAD(PORT) = KEYPAD_COLS; // Rows pulled low; Columns pulled high

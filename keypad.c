@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 
 #include "events.h"
 #include "keypad.h"
@@ -23,7 +24,12 @@
 #define KEYPAD_INT(reg, ...) reg##0##__VA_ARGS__
 #define KEYPAD_INT_PINS(reg) reg##B
 
-static char keymap[4][4];
+static const char keymap[4][4] PROGMEM = {
+    {'1', '2', '3', 'A'},
+    {'4', '5', '6', 'B'},
+    {'7', '8', '9', 'C'},
+    {'*', '0', '#', 'D'}
+};
 
 static void (*onKeypadPressCallback)(char);
 
@@ -74,7 +80,7 @@ static void onPress() {
         col = 3;
 
     // Call the callback
-    onKeypadPressCallback(keymap[row][col]);
+    onKeypadPressCallback(pgm_read_byte(&keymap[row][col]));
 }
 
 void onKeypadPress(void (*callback)(char)) {
@@ -83,26 +89,6 @@ void onKeypadPress(void (*callback)(char)) {
 }
 
 void keypadSetup() {
-    keymap[0][0] = '1';
-    keymap[0][1] = '2';
-    keymap[0][2] = '3';
-    keymap[0][3] = 'A';
-
-    keymap[1][0] = '4';
-    keymap[1][1] = '5';
-    keymap[1][2] = '6';
-    keymap[1][3] = 'B';
-
-    keymap[2][0] = '7';
-    keymap[2][1] = '8';
-    keymap[2][2] = '9';
-    keymap[2][3] = 'C';
-
-    keymap[3][0] = '*';
-    keymap[3][1] = '0';
-    keymap[3][2] = '#';
-    keymap[3][3] = 'D';
-
     KEYPAD(DDR) = KEYPAD_ROWS;
     KEYPAD(PORT) = KEYPAD_COLS; // Rows pulled low; Columns pulled high
 
