@@ -63,7 +63,7 @@ static void onPress() {
     KEYPAD_INT(PCMSK) = 0xff;
 
     // Decode the column
-    uint8_t col;
+    uint8_t col = 0;
     if (input & (1 << KEYPAD_COL0))
         col = 0;
     else if (input & (1 << KEYPAD_COL1))
