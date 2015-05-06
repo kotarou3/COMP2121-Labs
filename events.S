@@ -611,8 +611,8 @@ onTick_clearTickCounter_start:
     brlo onTick_clearTickCounter_end
 
     //     TCNT5 -= 125;
-    sts _SFR_MEM_ADDR(TCNT5L), r20
     sts _SFR_MEM_ADDR(TCNT5H), r21
+    sts _SFR_MEM_ADDR(TCNT5L), r20
 
     //     ++ticks;
     subi r16, lo8(-1)
