@@ -717,6 +717,7 @@ onTick_iterateCallbacks_checkLastTime_end:
     sbiw YL, 0
     breq onTick_end
 
+    //     }
 onTick_iterateCallbacks_next: // (buffer = buffer->next)
     ldd r0, Y + IntervalCallback_next
     ldd YH, Y + IntervalCallback_next + 1
@@ -735,6 +736,7 @@ onTick_end:
     pop r11
     pop r10
     ret
+// }
 
 // static void unhandledInterrupt(uint8_t vectorNum) {
 unhandledInterrupt:

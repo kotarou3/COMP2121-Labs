@@ -37,7 +37,6 @@ static IntervalCallback* callbacks;
 /*static*/ void (*interrupts[_VECTORS_SIZE >> 2])(uint8_t); // events.S needs access, so not static
 static DebounceCallback debounceCallbacks[PCINT2_vect_num - INT0_vect_num + 1];
 
-
 void* setTimeout(void (*callback)(uint8_t), uint8_t arg, uint16_t milliseconds) {
     return setIntervalWithDelay((void (*)(uint8_t, bool))callback, arg, 0, milliseconds, 1);
 }
