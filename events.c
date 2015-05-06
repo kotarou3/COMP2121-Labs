@@ -154,6 +154,12 @@ void onDebouncedInterrupt(uint8_t vectorNumber, void (*callback)(uint8_t)) {
     onInterrupt(vectorNumber, debounceStart);
 }
 
+void busyWait(uint8_t milliseconds) {
+    uint16_t target = TCNT5 + MILLISECONDS_TO_TICKS((uint16_t)milliseconds * 125);
+    while (target != TCNT5)
+        ;
+}
+
 static void onTick() {
     while (TCNT5 >= 125) {
         TCNT5 -= 125;

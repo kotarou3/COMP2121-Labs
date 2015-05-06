@@ -585,6 +585,40 @@ onDebouncedInterrupt:
 	jmp onInterrupt
 // }
 
+// void busyWait(uint8_t milliseconds) {
+    .global busyWait
+busyWait:
+
+    // #define MILLISECONDS_TO_TICKS(a) (((a) + 7) >> 3) // 8 ticks per millisecond for 16 Hz
+    // uint16_t target = TCNT5 + MILLISECONDS_TO_TICKS((uint16_t)milliseconds * 125);
+    lds r22, _SFR_MEM_ADDR(TCNT5L)
+    lds r23, _SFR_MEM_ADDR(TCNT5H)
+    ldi r20, 125
+    mul r24, r20
+    movw r24, r0
+    clr r1
+    adiw r24, 7
+    lsr r25
+    ror r24
+    lsr r25
+    ror r24
+    lsr r25
+    ror r24
+    add r24, r22
+    adc r25, r23
+
+    // while (target != TCNT5)
+    //     ;
+busyWait_wait:
+    lds r22, _SFR_MEM_ADDR(TCNT5L)
+    lds r23, _SFR_MEM_ADDR(TCNT5H)
+    cp r24, r22
+    cpc r25, r23
+    brne busyWait_wait
+
+    ret
+// }
+
 // static void onTick() {
 onTick:
     push r10
