@@ -17,7 +17,7 @@ static uint16_t udivmod8(uint8_t dividend, uint8_t divisor) {
 
     // Binary long division: http://en.wikipedia.org/wiki/Division_algorithm#Integer_division_.28unsigned.29_with_remainder
     // Modified to be more optimal for AVR
-    for (uint8_t i = 0; i < 8; ++i) {
+    for (uint8_t i = 8; i > 0; --i) {
         remainder <<= 1;
         remainder |= dividend >> 7;
         dividend <<= 1;
@@ -35,20 +35,17 @@ static void updateLcdWithAccumulator(uint8_t accumulator) {
     lcdClear();
     lcdSetCursor(false, 0);
 
-    char buf[3]; // Maximum 3 digits for 8 bits
-    char* top = buf;
+    char buf[4]; // Maximum 3 digits for 8 bits + terminating null
+    char* start = &buf[3];
+    *start = 0;
     while (accumulator >= 10) {
         uint16_t divmod = udivmod8(accumulator, 10);
         accumulator = divmod & 0xff;
-        *top = (divmod >> 8) + '0';
-        ++top;
+        *--start = (divmod >> 8) + '0';
     }
-    *top = accumulator + '0';
+    *--start = accumulator + '0';
 
-    while (top >= buf) {
-        lcdWrite(*top);
-        --top;
-    }
+    lcdWriteString(start);
 
     lcdSetCursor(true, 0);
 }
