@@ -34,7 +34,7 @@ static inline void microsecondBusyWait() {
     __builtin_avr_delay_cycles(F_CPU / 1000000);
 }
 
-static inline uint8_t readRaw(bool isControl) {
+static uint8_t readRaw(bool isControl) {
     LCD_DATA(DDR) = 0;
     LCD_DATA(PORT) = 0;
 
@@ -51,7 +51,7 @@ static inline uint8_t readRaw(bool isControl) {
     return result;
 }
 
-static inline void writeRaw(uint8_t data, bool isInstruction, bool isSkippingBusyCheck) {
+static void writeRaw(uint8_t data, bool isInstruction, bool isSkippingBusyCheck) {
     if (!isSkippingBusyCheck)
         while (readRaw(true) & (1 << LCD_BF))
             ;
