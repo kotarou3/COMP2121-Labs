@@ -7,14 +7,6 @@
 #include "../keypad.h"
 #include "../lcd.h"
 
-static enum Operation {
-    OPERATION_SET,
-    OPERATION_ADD,
-    OPERATION_SUBTRACT,
-    OPERATION_MULTIPLY,
-    OPERATION_DIVIDE
-} currentOperation;
-
 static uint8_t accumulator;
 static uint8_t input;
 
@@ -68,37 +60,19 @@ static void onPress(char key) {
     } else if (key == '*') {
         accumulator = 0;
         input = 0;
-        currentOperation = OPERATION_SET;
         updateLcdWithAccumulator(0);
     } else if ('A' <= key && key <= 'D') {
-        if (currentOperation == OPERATION_SET)
-            accumulator = input;
-        else if (currentOperation == OPERATION_ADD)
+        if (key == 'A')
             accumulator += input;
-        else if (currentOperation == OPERATION_SUBTRACT)
+        else if (key == 'B')
             accumulator -= input;
-        else if (currentOperation == OPERATION_MULTIPLY)
+        else if (key == 'C')
             accumulator *= input;
-        else if (currentOperation == OPERATION_DIVIDE)
+        else if (key == 'D')
             accumulator = udivmod8(accumulator, input) & 0xff;
 
         input = 0;
         updateLcdWithAccumulator(accumulator);
-
-        if (key == 'A') {
-            currentOperation = OPERATION_ADD;
-            lcdWrite('+');
-        } else if (key == 'B') {
-            currentOperation = OPERATION_SUBTRACT;
-            lcdWrite('-');
-        } else if (key == 'C') {
-            currentOperation = OPERATION_MULTIPLY;
-            lcdWrite('x');
-        } else if (key == 'D') {
-            currentOperation = OPERATION_DIVIDE;
-            lcdWrite(0xfd); // Divide symbol
-        }
-        lcdShiftCursor(false);
     }
 }
 
