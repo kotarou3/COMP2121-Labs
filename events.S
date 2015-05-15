@@ -390,65 +390,65 @@ debounceEnd_switch_jumptable:
 debounceEnd_switch_case_int0:
     //         isPinHigh = PIND & (1 << PD0);
     //         break;
-	in r25, _SFR_IO_ADDR(PIND)
-	andi r25, 1 << PD0
-	rjmp debounceEnd_switch_end
+    in r25, _SFR_IO_ADDR(PIND)
+    andi r25, 1 << PD0
+    rjmp debounceEnd_switch_end
 
     //     case INT1_vect_num:
 debounceEnd_switch_case_int1:
     //         isPinHigh = PIND & (1 << PD1);
     //         break;
-	in r25, _SFR_IO_ADDR(PIND)
-	andi r25, 1 << PD1
-	rjmp debounceEnd_switch_end
+    in r25, _SFR_IO_ADDR(PIND)
+    andi r25, 1 << PD1
+    rjmp debounceEnd_switch_end
 
     //     case INT2_vect_num:
 debounceEnd_switch_case_int2:
     //         isPinHigh = PIND & (1 << PD2);
     //         break;
-	in r25, _SFR_IO_ADDR(PIND)
-	andi r25, 1 << PD2
-	rjmp debounceEnd_switch_end
+    in r25, _SFR_IO_ADDR(PIND)
+    andi r25, 1 << PD2
+    rjmp debounceEnd_switch_end
 
     //     case INT3_vect_num:
 debounceEnd_switch_case_int3:
     //         isPinHigh = PIND & (1 << PD3);
     //         break;
-	in r25, _SFR_IO_ADDR(PIND)
-	andi r25, 1 << PD3
-	rjmp debounceEnd_switch_end
+    in r25, _SFR_IO_ADDR(PIND)
+    andi r25, 1 << PD3
+    rjmp debounceEnd_switch_end
 
     //     case INT4_vect_num:
 debounceEnd_switch_case_int4:
     //         isPinHigh = PINE & (1 << PE4);
     //         break;
-	in r25, _SFR_IO_ADDR(PINE)
-	andi r25, 1 << PE4
-	rjmp debounceEnd_switch_end
+    in r25, _SFR_IO_ADDR(PINE)
+    andi r25, 1 << PE4
+    rjmp debounceEnd_switch_end
 
     //     case INT5_vect_num:
 debounceEnd_switch_case_int5:
     //         isPinHigh = PINE & (1 << PE5);
     //         break;
-	in r25, _SFR_IO_ADDR(PINE)
-	andi r25, 1 << PE5
-	rjmp debounceEnd_switch_end
+    in r25, _SFR_IO_ADDR(PINE)
+    andi r25, 1 << PE5
+    rjmp debounceEnd_switch_end
 
     //     case INT6_vect_num:
 debounceEnd_switch_case_int6:
     //         isPinHigh = PINE & (1 << PE6);
     //         break;
-	in r25, _SFR_IO_ADDR(PINE)
-	andi r25, 1 << PE6
-	rjmp debounceEnd_switch_end
+    in r25, _SFR_IO_ADDR(PINE)
+    andi r25, 1 << PE6
+    rjmp debounceEnd_switch_end
 
     //     case INT7_vect_num:
 debounceEnd_switch_case_int7:
     //         isPinHigh = PINE & (1 << PE7);
     //         break;
-	in r25, _SFR_IO_ADDR(PINE)
-	andi r25, 1 << PE7
-	rjmp debounceEnd_switch_end
+    in r25, _SFR_IO_ADDR(PINE)
+    andi r25, 1 << PE7
+    rjmp debounceEnd_switch_end
 
     //     case PCINT0_vect_num:
 debounceEnd_switch_case_pcint0:
@@ -458,7 +458,7 @@ debounceEnd_switch_case_pcint0:
     cpi r22, 0xff
     SKIP_IF(ne)
     inc r25
-	rjmp debounceEnd_switch_end
+    rjmp debounceEnd_switch_end
 
     //     case PCINT1_vect_num:
 debounceEnd_switch_case_pcint1:
@@ -472,7 +472,7 @@ debounceEnd_switch_case_pcint1:
     or r22, r23
     cpi r22, 0xff
     inc r25
-	rjmp debounceEnd_switch_end
+    rjmp debounceEnd_switch_end
 
     //     case PCINT2_vect_num:
 debounceEnd_switch_case_pcint2:
@@ -580,9 +580,9 @@ onDebouncedInterrupt:
     std Z + DebounceCallback_callback + 1, r23
 
     // onInterrupt(vectorNumber, debounceStart);
-	ldi r22, lo8(gs(debounceStart))
-	ldi r23, hi8(gs(debounceStart))
-	jmp onInterrupt
+    ldi r22, lo8(gs(debounceStart))
+    ldi r23, hi8(gs(debounceStart))
+    jmp onInterrupt
 // }
 
 // void busyWait(uint8_t milliseconds) {

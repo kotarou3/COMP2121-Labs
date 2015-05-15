@@ -30,11 +30,11 @@
 .macro microsecondBusyWait, tmpReg
     // __builtin_avr_delay_cycles(F_CPU / 1000000);
     // 16 cycles for 16 MHz
-	ldi \tmpReg, 5 // 1 cycle
+    ldi \tmpReg, 5 // 1 cycle
 1:
     dec \tmpReg // 5 * 1 cycle
-	brne 1b // 4 * 2 + 1 cycle
-	nop // 1 cycle
+    brne 1b // 4 * 2 + 1 cycle
+    nop // 1 cycle
 .endm
 // }
 
@@ -134,7 +134,7 @@ lcdClear:
 // }
 
 // void lcdSetCursor(bool isTopRow, uint8_t col) {
-    .global	lcdSetCursor
+    .global lcdSetCursor
 lcdSetCursor:
 
     // if (col > 40)

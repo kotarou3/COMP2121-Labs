@@ -109,7 +109,7 @@ onPress:
 onPress_gotInput:
     // Restore the keypad's state
     // KEYPAD(PORT) = KEYPAD_COLS;
-    ldi r23, KEYPAD_COLS;
+    ldi r23, KEYPAD_COLS
     sts _SFR_MEM_ADDR(KEYPAD(PORT)), r23
 
     // KEYPAD_INT(PCMSK) = 0xff;
@@ -155,14 +155,14 @@ onPress_gotInput:
 onKeypadPress:
 
     // onKeypadPressCallback = callback;
-	sts onKeypadPressCallback, r24
-	sts onKeypadPressCallback + 1, r25
+    sts onKeypadPressCallback, r24
+    sts onKeypadPressCallback + 1, r25
 
     // onDebouncedInterrupt(KEYPAD_INT(PCINT, _vect_num), (void (*)(uint8_t))onPress);
-	ldi r22, lo8(gs(onPress))
-	ldi r23, hi8(gs(onPress))
-	ldi r24, KEYPAD_INT(PCINT, _vect_num)
-	jmp onDebouncedInterrupt
+    ldi r22, lo8(gs(onPress))
+    ldi r23, hi8(gs(onPress))
+    ldi r24, KEYPAD_INT(PCINT, _vect_num)
+    jmp onDebouncedInterrupt
 // }
 
 // void keypadSetup() {
