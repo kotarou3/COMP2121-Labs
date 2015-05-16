@@ -1,7 +1,7 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
-#ifndef ALL_ASSEMBLY
+#ifndef __ASSEMBLER__
 
 #include <stdbool.h>
 #include <stdint.h>

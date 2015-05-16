@@ -1,7 +1,7 @@
 #ifndef CIRCULAR_BUFFER_H
 #define CIRCULAR_BUFFER_H
 
-#ifndef ALL_ASSEMBLY
+#ifndef __ASSEMBLER__
 
 #include <stdbool.h>
 #include <stdint.h>
