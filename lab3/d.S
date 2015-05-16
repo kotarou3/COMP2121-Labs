@@ -298,7 +298,7 @@ debouncePress_checkButton_end:
     brz debouncePress_end
 
     //         isCheckingDouble = false;
-    sts debouncePress_isCheckingDouble, 0
+    sts debouncePress_isCheckingDouble, r1
 
     //         onPress(!isLeft);
     ldi r25, 1
@@ -313,7 +313,7 @@ debouncePress_buttonStillPressed:
     brz debouncePress_notDoublePress
 
     //         isCheckingDouble = false;
-    sts debouncePress_isCheckingDouble, 0
+    sts debouncePress_isCheckingDouble, r1
 
     //         onDoublePress();
     jmp onDoublePress
