@@ -13,7 +13,7 @@
     cp \pL, r0
     ldd r0, \buffer + CircularBuffer_bufferEnd + 1
     cpc \pH, r0
-    SKIP2_IF(ne)
+    skip2If ne
     ldd \pL, \buffer + CircularBuffer_bufferStart
     ldd \pH, \buffer + CircularBuffer_bufferStart + 1
 
@@ -97,7 +97,7 @@ CircularBuffer_isEmpty:
     ldd r19, Z + CircularBuffer_dataEnd + 1
     cp r20, r18
     cpc r21, r19
-    SKIP_IF(ne)
+    skipIf ne
     inc r24
     ret
 // }

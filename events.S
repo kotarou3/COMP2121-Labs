@@ -456,7 +456,7 @@ debounceEnd_switch_case_pcint0:
     //         break;
     in r22, _SFR_IO_ADDR(PINB)
     cpi r22, 0xff
-    SKIP_IF(ne)
+    skipIf ne
     inc r25
     rjmp debounceEnd_switch_end
 
@@ -480,7 +480,7 @@ debounceEnd_switch_case_pcint2:
     //         break;
     lds r22, _SFR_MEM_ADDR(PINK)
     cpi r22, 0xff
-    SKIP_IF(ne)
+    skipIf ne
     inc r25
 
     // }
@@ -668,7 +668,7 @@ onTick_clearTickCounter_end:
     // for (IntervalCallback* buffer = callbacks; buffer; buffer = buffer->next)
 onTick_iterateCallbacks_start:
     sbiw YL, 0
-    SKIP2_IF(ne)
+    skip2If ne
     jmp onTick_end
 
     //     if (ticks >= buffer->when) {
@@ -707,7 +707,7 @@ onTick_iterateCallbacks_start:
     clr r11
     cpi r24, 1
     cpc r25, r1
-    SKIP_IF(ne)
+    skipIf ne
     inc r11
 
     //         if (isLastTime) {

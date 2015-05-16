@@ -358,7 +358,7 @@ onUndebouncedPress:
     // bool isLeft = vectorNumber == BUTTON_L_INT(INT, _vect_num);
     clr r17
     cpi r24, BUTTON_L_INT(INT, _vect_num)
-    SKIP_IF(ne)
+    skipIf ne
     inc r17
 
     mov YL, r17

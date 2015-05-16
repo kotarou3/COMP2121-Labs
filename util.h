@@ -3,9 +3,6 @@
 
 #include <avr/io.h>
 
-#define SKIP_IF(condition) br##condition . + 2
-#define SKIP2_IF(condition) br##condition . + 4
-
 .macro hlt
     cli
     ldi r24, (1 << SM1) | (1 << SE) // SLEEP_MODE_PWR_DOWN
@@ -18,6 +15,13 @@
 .endm
 .macro brnz, target
     brne \target
+.endm
+
+.macro skipIf, condition
+    br\condition . + 2
+.endm
+.macro skip2If, condition
+    br\condition . + 4
 .endm
 
 .macro lsln, reg, n

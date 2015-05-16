@@ -50,7 +50,7 @@ readRaw:
     // microsecondBusyWait();
     ldi r23, (1 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E)
     tst r24
-    SKIP_IF(nz)
+    skipIf nz
     ori r23, 1 << LCD_CONTROL_RS
     out _SFR_IO_ADDR(LCD_CONTROL(PORT)), r23
     microsecondBusyWait r22
@@ -102,7 +102,7 @@ writeRaw_skippedBusyCheck:
     // microsecondBusyWait();
     ldi r23, (0 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E)
     tst r16
-    SKIP_IF(nz)
+    skipIf nz
     ori r23, 1 << LCD_CONTROL_RS
     out _SFR_IO_ADDR(LCD_CONTROL(PORT)), r23
     microsecondBusyWait r22
@@ -140,7 +140,7 @@ lcdSetCursor:
     // if (col > 40)
     //     col = 40;
     cpi r22, 40 + 1
-    SKIP_IF(lo) // !(col > 40) <=> col < 41
+    skipIf lo // !(col > 40) <=> col < 41
     ldi r22, 40
 
     // if (isTopRow)

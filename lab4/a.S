@@ -10,7 +10,7 @@ onPress:
     //     LED(PORT) = input - '0';
     subi r24, '0'
     cpi r24, 10
-    SKIP_IF(sh) // input - '0' < 10
+    skipIf sh // input - '0' < 10
     out _SFR_IO_ADDR(LED(PORT)), r24
     ret
 // }

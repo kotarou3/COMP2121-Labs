@@ -163,7 +163,7 @@ onPress_notAsterix:
     mov r20, r24
     subi r24, 'A'
     cpi r24, 4
-    SKIP_IF(lo) // key - 'A' < 4
+    skipIf lo // key - 'A' < 4
     ret
 
     lds r22, input

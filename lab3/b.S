@@ -19,7 +19,7 @@
     lds r25, currentPattern + 1
     lsr r25
     ror r24
-    SKIP_IF(cc)
+    skipIf cc
     subi r25, -0x80
     out _SFR_IO_ADDR(PORTC), r24
     sts currentPattern, r24
