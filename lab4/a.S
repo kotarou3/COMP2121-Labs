@@ -1,5 +1,4 @@
 #include <avr/io.h>
-#include "../keypad.h"
 #include "../util.h"
 
 #define LED(reg) reg##C

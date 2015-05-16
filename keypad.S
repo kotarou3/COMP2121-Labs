@@ -1,6 +1,5 @@
 #include <avr/io.h>
 #include "events.h"
-#include "keypad.h"
 #include "util.h"
 
 #define KEYPAD(reg) reg##L
