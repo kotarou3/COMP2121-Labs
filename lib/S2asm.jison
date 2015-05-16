@@ -79,6 +79,12 @@
                     continue;
                 }
 
+                // Special case for including avr/io.h: Change to m2560.inc
+                if (lines[l].preprocessor.slice(-10) === "<avr/io.h>") {
+                    lines[l].isChanged = true;
+                    lines[l].preprocessor = lines[l].preprocessor.slice(0, -10) + "<m2560def.inc>";
+                }
+
                 // Special case for including util.h: Change to util.inc
                 if (lines[l].preprocessor.slice(-7) === "util.h\"") {
                     lines[l].isChanged = true;
@@ -393,7 +399,7 @@ expression
         {$$ = {expression: $1 + $2 + $3};}
     | IDENTIFIER "(" expressionList ")"
         {
-            if ($1 === "gs" && $3.expressions.length == 1) {
+            if (($1 === "gs" || $1 === "_SFR_IO_ADDR" || $1 === "_SFR_MEM_ADDR") && $3.expressions.length == 1) {
                 $$ = {isChanged: true, expression: $3.expressions[0]};
             } else {
                 var isChanged = $3.isChanged;
