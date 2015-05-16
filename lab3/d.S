@@ -12,8 +12,10 @@
 #define BUTTONS(reg) reg##D
 #define BUTTON_L PD1
 #define BUTTON_R PD0
-#define BUTTON_L_INT(reg, ...) reg##1##__VA_ARGS__
-#define BUTTON_R_INT(reg, ...) reg##0##__VA_ARGS__
+#define BUTTON_L_INT(reg) reg##1
+#define BUTTON_R_INT(reg) reg##0
+#define BUTTON_L_INT_S(reg, suf) reg##1##suf
+#define BUTTON_R_INT_S(reg, suf) reg##0##suf
 
 #define LED(reg) reg##C
 
@@ -357,7 +359,7 @@ onUndebouncedPress:
 
     // bool isLeft = vectorNumber == BUTTON_L_INT(INT, _vect_num);
     clr r17
-    cpi r24, BUTTON_L_INT(INT, _vect_num)
+    cpi r24, BUTTON_L_INT_S(INT, _vect_num)
     skipIf ne
     inc r17
 
@@ -428,8 +430,8 @@ setup:
     //     (1 << BUTTON_L_INT(ISC, 1)) | (0 << BUTTON_L_INT(ISC, 0)) |
     //     (1 << BUTTON_R_INT(ISC, 1)) | (0 << BUTTON_R_INT(ISC, 0));
     ldi r24, \
-        (1 << BUTTON_L_INT(ISC, 1)) | (0 << BUTTON_L_INT(ISC, 0)) | \
-        (1 << BUTTON_R_INT(ISC, 1)) | (0 << BUTTON_R_INT(ISC, 0))
+        (1 << BUTTON_L_INT_S(ISC, 1)) | (0 << BUTTON_L_INT_S(ISC, 0)) | \
+        (1 << BUTTON_R_INT_S(ISC, 1)) | (0 << BUTTON_R_INT_S(ISC, 0))
     sts _SFR_MEM_ADDR(EICRA), r24
 
     // EIMSK = (1 << BUTTON_L_INT(INT)) | (1 << BUTTON_R_INT(INT));
@@ -439,12 +441,12 @@ setup:
     // onInterrupt(BUTTON_L_INT(INT, _vect_num), onUndebouncedPress);
     ldi r22, lo8(gs(onUndebouncedPress))
     ldi r23, hi8(gs(onUndebouncedPress))
-    ldi r24, BUTTON_L_INT(INT, _vect_num)
+    ldi r24, BUTTON_L_INT_S(INT, _vect_num)
     call onInterrupt
 
     // onInterrupt(BUTTON_R_INT(INT, _vect_num), onUndebouncedPress);
     ldi r22, lo8(gs(onUndebouncedPress))
     ldi r23, hi8(gs(onUndebouncedPress))
-    ldi r24, BUTTON_R_INT(INT, _vect_num)
+    ldi r24, BUTTON_R_INT_S(INT, _vect_num)
     jmp onInterrupt
 // }

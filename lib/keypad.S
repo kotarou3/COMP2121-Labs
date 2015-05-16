@@ -14,7 +14,8 @@
 #define KEYPAD_ROWS ((1 << KEYPAD_ROW0) | (1 << KEYPAD_ROW1) | (1 << KEYPAD_ROW2) | (1 << KEYPAD_ROW3))
 #define KEYPAD_COLS (~KEYPAD_ROWS)
 
-#define KEYPAD_INT(reg, ...) reg##0##__VA_ARGS__
+#define KEYPAD_INT(reg) reg##0
+#define KEYPAD_INT_S(reg, suf) reg##0##suf
 #define KEYPAD_INT_PINS(reg) reg##B
 
 // static const char keymap[4][4] PROGMEM = {
@@ -160,7 +161,7 @@ onKeypadPress:
     // onDebouncedInterrupt(KEYPAD_INT(PCINT, _vect_num), (void (*)(uint8_t))onPress);
     ldi r22, lo8(gs(onPress))
     ldi r23, hi8(gs(onPress))
-    ldi r24, KEYPAD_INT(PCINT, _vect_num)
+    ldi r24, KEYPAD_INT_S(PCINT, _vect_num)
     jmp onDebouncedInterrupt
 // }
 

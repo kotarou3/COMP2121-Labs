@@ -6,12 +6,79 @@
     rjmp _start
     nop
 
+#ifndef __AVRASM_VERSION__
+
 .set currentVectorNum, 1
 .rept (_VECTORS_SIZE >> 2) - 1
     ldi r24, currentVectorNum << 1
     rjmp _emitInterrupt
     .set currentVectorNum, currentVectorNum + 1
 .endr
+
+#else
+
+.macro intHandler, vectorNumber
+    ldi r24, \vectorNumber << 1
+    rjmp _emitInterrupt
+.endm
+intHandler INT0_vect_num
+intHandler INT1_vect_num
+intHandler INT2_vect_num
+intHandler INT3_vect_num
+intHandler INT4_vect_num
+intHandler INT5_vect_num
+intHandler INT6_vect_num
+intHandler INT7_vect_num
+intHandler PCINT0_vect_num
+intHandler PCINT1_vect_num
+intHandler PCINT2_vect_num
+intHandler WDT_vect_num
+intHandler TIMER2_COMPA_vect_num
+intHandler TIMER2_COMPB_vect_num
+intHandler TIMER2_OVF_vect_num
+intHandler TIMER1_CAPT_vect_num
+intHandler TIMER1_COMPA_vect_num
+intHandler TIMER1_COMPB_vect_num
+intHandler TIMER1_COMPC_vect_num
+intHandler TIMER1_OVF_vect_num
+intHandler TIMER0_COMPA_vect_num
+intHandler TIMER0_COMPB_vect_num
+intHandler TIMER0_OVF_vect_num
+intHandler SPI_STC_vect_num
+intHandler USART0_RX_vect_num
+intHandler USART0_UDRE_vect_num
+intHandler USART0_TX_vect_num
+intHandler ANALOG_COMP_vect_num
+intHandler ADC_vect_num
+intHandler EE_READY_vect_num
+intHandler TIMER3_CAPT_vect_num
+intHandler TIMER3_COMPA_vect_num
+intHandler TIMER3_COMPB_vect_num
+intHandler TIMER3_COMPC_vect_num
+intHandler TIMER3_OVF_vect_num
+intHandler USART1_RX_vect_num
+intHandler USART1_UDRE_vect_num
+intHandler USART1_TX_vect_num
+intHandler TWI_vect_num
+intHandler SPM_READY_vect_num
+intHandler TIMER4_CAPT_vect_num
+intHandler TIMER4_COMPA_vect_num
+intHandler TIMER4_COMPB_vect_num
+intHandler TIMER4_COMPC_vect_num
+intHandler TIMER4_OVF_vect_num
+intHandler TIMER5_CAPT_vect_num
+intHandler TIMER5_COMPA_vect_num
+intHandler TIMER5_COMPB_vect_num
+intHandler TIMER5_COMPC_vect_num
+intHandler TIMER5_OVF_vect_num
+intHandler USART2_RX_vect_num
+intHandler USART2_UDRE_vect_num
+intHandler USART2_TX_vect_num
+intHandler USART3_RX_vect_num
+intHandler USART3_UDRE_vect_num
+intHandler USART3_TX_vect_num
+
+#endif
 
     .section .text
 _start:
