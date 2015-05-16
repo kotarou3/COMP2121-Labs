@@ -1,7 +1,7 @@
 #include <avr/io.h>
-#include "../events.h"
-#include "../circular-buffer.h"
-#include "../util.h"
+#include "events.h"
+#include "circular-buffer.h"
+#include "util.h"
 
 #define DISPLAY_BUFFER_SIZE 32
 #define DISPLAY_FLASHES 3

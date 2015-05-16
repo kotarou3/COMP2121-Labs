@@ -4,8 +4,8 @@
 
 #include <avr/io.h>
 
-#include "../keypad.h"
-#include "../lcd.h"
+#include "keypad.h"
+#include "lcd.h"
 
 static uint8_t accumulator;
 static uint8_t input;

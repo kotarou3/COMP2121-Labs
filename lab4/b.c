@@ -5,7 +5,7 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
-#include "../lcd.h"
+#include "lcd.h"
 
 static const char line1[] PROGMEM = "COMP2121";
 static const char line2[] PROGMEM = "Lab 4";

@@ -1,5 +1,5 @@
 #include <avr/io.h>
-#include "../util.h"
+#include "util.h"
 
 // static uint8_t accumulator;
 .lcomm accumulator, 1

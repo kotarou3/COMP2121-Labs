@@ -1,5 +1,5 @@
 #include <avr/io.h>
-#include "../util.h"
+#include "util.h"
 
 .org 0
     ser r16

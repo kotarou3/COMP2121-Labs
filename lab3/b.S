@@ -1,5 +1,5 @@
 #include <avr/io.h>
-#include "../util.h"
+#include "util.h"
 
 .equ LED_PATTERN, 0xaaff
 

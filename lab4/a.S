@@ -1,5 +1,5 @@
 #include <avr/io.h>
-#include "../util.h"
+#include "util.h"
 
 #define LED(reg) reg##C
 
