@@ -1,9 +1,12 @@
-include Makefile.inc
+DIRS = $(basename $(wildcard */))
 
-DIRS = $(wildcard */)
+.PHONY: all clean $(DIRS)
 
-all:
-	$(foreach DIR, $(DIRS), $(MAKE) all -C $(DIR) &&) true
+all: ACTION = all
+all: $(DIRS)
 
-clean:
-	$(foreach DIR, $(DIRS), $(MAKE) clean -C $(DIR) &&) true
+clean: ACTION = clean
+clean: $(DIRS)
+
+$(DIRS):
+	$(MAKE) $(ACTION) -C $@
