@@ -11,7 +11,7 @@ index 901c2be..d0c9d55 100644
  onTick_clearTickCounter_start:
 -    lds r20, _SFR_MEM_ADDR(TCNT5L)
 -    lds r21, _SFR_MEM_ADDR(TCNT5H)
-+    lds r20, _SFR_MEM_ADDR(TCNT0)
++    in r20, _SFR_IO_ADDR(TCNT0)
      subi r20, 125
 -    sbc r21, r1
      brlo onTick_clearTickCounter_end
@@ -20,7 +20,7 @@ index 901c2be..d0c9d55 100644
 -    sts _SFR_MEM_ADDR(TCNT5H), r21
 -    sts _SFR_MEM_ADDR(TCNT5L), r20
 +    //     TCNT0 -= 125;
-+    sts _SFR_MEM_ADDR(TCNT0), r20
++    out _SFR_IO_ADDR(TCNT0), r20
  
      //     ++ticks;
      subi r16, lo8(-1)
@@ -35,14 +35,14 @@ index 901c2be..d0c9d55 100644
 +    // Setup Timer0 to interrupt every 1024 * 125 cycles
 +    // TCCR0B = (1 << CS02) | (1 << CS00);
 +    ldi r24, (1 << CS02) | (1 << CS00)
-+    sts _SFR_MEM_ADDR(TCCR0B), r24
++    out _SFR_IO_ADDR(TCCR0B), r24
  
 -    // OCR5A = 125;
 +    // OCR0A = 125;
      ldi r24, 125
 -    sts _SFR_MEM_ADDR(OCR5AL), r24
 -    sts _SFR_MEM_ADDR(OCR5AH), r1
-+    sts _SFR_MEM_ADDR(OCR0A), r24
++    out _SFR_IO_ADDR(OCR0A), r24
  
 -    // TIMSK5 = (1 << OCIE5A);
 -    ldi r24, (1 << OCIE5A)

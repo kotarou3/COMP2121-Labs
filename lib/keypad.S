@@ -180,9 +180,9 @@ keypadSetup:
     // KEYPAD_INT_PINS(PORT) = 0xff;
     // KEYPAD_INT(PCMSK) = 0xff;
     // PCICR = 1 << KEYPAD_INT(PCIE);
-    sts _SFR_MEM_ADDR(KEYPAD_INT_PINS(DDR)), r1
+    out _SFR_IO_ADDR(KEYPAD_INT_PINS(DDR)), r1
     ser r24
-    sts _SFR_MEM_ADDR(KEYPAD_INT_PINS(PORT)), r24
+    out _SFR_IO_ADDR(KEYPAD_INT_PINS(PORT)), r24
     sts _SFR_MEM_ADDR(KEYPAD_INT(PCMSK)), r24
     ldi r24, 1 << KEYPAD_INT(PCIE)
     sts _SFR_MEM_ADDR(PCICR), r24
