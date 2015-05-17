@@ -72,10 +72,10 @@ void lcdClear() {
     writeRaw(LCD_INSTRUCTION_CLEAR_DISPLAY, true, false);
 }
 
-void lcdSetCursor(bool isTopRow, uint8_t col) {
+void lcdSetCursor(bool isBottomRow, uint8_t col) {
     if (col > 40)
         col = 40;
-    if (isTopRow)
+    if (isBottomRow)
         col += 0x40;
 
     writeRaw(LCD_INSTRUCTION_SET_DDRAM_ADDRESS | col, true, false);

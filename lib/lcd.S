@@ -133,7 +133,7 @@ lcdClear:
     jmp writeRaw
 // }
 
-// void lcdSetCursor(bool isTopRow, uint8_t col) {
+// void lcdSetCursor(bool isBottomRow, uint8_t col) {
     .global lcdSetCursor
 lcdSetCursor:
 
@@ -143,7 +143,7 @@ lcdSetCursor:
     skipIf lo // !(col > 40) <=> col < 41
     ldi r22, 40
 
-    // if (isTopRow)
+    // if (isBottomRow)
     //     col += 0x40;
     cpse r24, r1
     subi r22, -0x40

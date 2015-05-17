@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 void lcdClear();
-void lcdSetCursor(bool isTopRow, uint8_t col);
+void lcdSetCursor(bool isBottomRow, uint8_t col);
 void lcdShiftCursor(bool isRight);
 
 void lcdWrite(char c);
