@@ -133,6 +133,42 @@ lcdClear:
     jmp writeRaw
 // }
 
+// void lcdClearSection(bool isBottomRow, uint8_t startCol, uint8_t length) {
+    .global lcdClearSection
+lcdClearSection:
+    push r17
+    push r28
+    push r29
+    mov r17, r20
+    mov r28, r22
+    mov r29, r24
+
+    // lcdSetCursor(isBottomRow, startCol);
+    call lcdSetCursor
+
+    // for (; length > 0; --length)
+    tst r17
+lcdClearSection_clear_start:
+    brz lcdClearSection_clear_end
+
+    //     writeRaw(' ', false, false);
+    clr r20
+    clr r22
+    ldi r24, ' '
+    call writeRaw
+    subi r17, 1
+    rjmp lcdClearSection_clear_start
+
+lcdClearSection_clear_end:
+    // lcdSetCursor(isBottomRow, startCol);
+    mov r22, r28
+    mov r24, r29
+    pop r29
+    pop r28
+    pop r17
+    jmp lcdSetCursor
+// }
+
 // void lcdSetCursor(bool isBottomRow, uint8_t col) {
     .global lcdSetCursor
 lcdSetCursor:

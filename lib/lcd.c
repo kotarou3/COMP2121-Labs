@@ -72,6 +72,15 @@ void lcdClear() {
     writeRaw(LCD_INSTRUCTION_CLEAR_DISPLAY, true, false);
 }
 
+void lcdClearSection(bool isBottomRow, uint8_t startCol, uint8_t length) {
+    lcdSetCursor(isBottomRow, startCol);
+
+    for (; length > 0; --length)
+        writeRaw(' ', false, false);
+
+    lcdSetCursor(isBottomRow, startCol);
+}
+
 void lcdSetCursor(bool isBottomRow, uint8_t col) {
     if (col > 40)
         col = 40;
