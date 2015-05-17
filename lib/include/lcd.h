@@ -9,6 +9,7 @@ void lcdClearSection(bool isBottomRow, uint8_t startCol, uint8_t length); // Als
 void lcdSetCursor(bool isBottomRow, uint8_t col);
 void lcdShiftCursor(bool isRight);
 
+void lcdStartCustomGlyphWrite(char c);
 void lcdWrite(char c);
 void lcdWriteString(const char* str);
 

@@ -203,6 +203,21 @@ lcdShiftCursor:
     jmp writeRaw
 // }
 
+// void lcdStartCustomGlyphWrite(char c) {
+    .global lcdStartCustomGlyphWrite
+lcdStartCustomGlyphWrite:
+
+    // writeRaw(LCD_INSTRUCTION_SET_CGRAM_ADDRESS | ((c & 0x07) * 8), true, false);
+    clr r20
+    ldi r22, 1
+    andi r24, 0x07
+    lsl r24
+    lsl r24
+    lsl r24
+    ori r24, LCD_INSTRUCTION_SET_CGRAM_ADDRESS
+    jmp writeRaw
+// }
+
 // void lcdWrite(char c) {
     .global lcdWrite
 lcdWrite:

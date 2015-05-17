@@ -94,6 +94,10 @@ void lcdShiftCursor(bool isRight) {
     writeRaw(LCD_INSTRUCTION_SHIFT_CURSOR | isRight, true, false);
 }
 
+void lcdStartCustomGlyphWrite(char c) {
+    writeRaw(LCD_INSTRUCTION_SET_CGRAM_ADDRESS | ((c & 0x07) * 8), true, false);
+}
+
 void lcdWrite(char c) {
     writeRaw(c, false, false);
 }
