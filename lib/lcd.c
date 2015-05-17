@@ -46,7 +46,7 @@ static uint8_t readRaw(bool isControl) {
 
     uint8_t result = LCD_DATA(PIN);
 
-    LCD_CONTROL(PORT) |= 0 << LCD_CONTROL_E;
+    LCD_CONTROL(PORT) &= ~(1 << LCD_CONTROL_E);
 
     return result;
 }
@@ -65,7 +65,7 @@ static void writeRaw(uint8_t data, bool isInstruction, bool isSkippingBusyCheck)
     LCD_CONTROL(PORT) |= 1 << LCD_CONTROL_E;
     microsecondBusyWait();
 
-    LCD_CONTROL(PORT) |= 0 << LCD_CONTROL_E;
+    LCD_CONTROL(PORT) &= ~(1 << LCD_CONTROL_E);
 }
 
 void lcdClear() {
@@ -87,17 +87,11 @@ void lcdShiftCursor(bool isRight) {
 
 void lcdWrite(char c) {
     writeRaw(c, false, false);
-
-    // Workaround for bug where the last character written doesn't display
-    readRaw(true);
 }
 
 void lcdWriteString(const char* str) {
     for (; *str; ++str)
         writeRaw(*str, false, false);
-
-    // Workaround for bug where the last character written doesn't display
-    readRaw(true);
 }
 
 void lcdSetup() {

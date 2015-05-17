@@ -64,8 +64,8 @@ readRaw:
     // uint8_t result = LCD_DATA(PIN);
     lds r24, _SFR_MEM_ADDR(LCD_DATA(PIN))
 
-    // LCD_CONTROL(PORT) |= 0 << LCD_CONTROL_E;
-    ori r23, 0 << LCD_CONTROL_E
+    // LCD_CONTROL(PORT) &= ~(1 << LCD_CONTROL_E);
+    andi r23, ~(1 << LCD_CONTROL_E)
     out _SFR_IO_ADDR(LCD_CONTROL(PORT)), r23
 
     // return result;
@@ -113,8 +113,8 @@ writeRaw_skippedBusyCheck:
     out _SFR_IO_ADDR(LCD_CONTROL(PORT)), r23
     microsecondBusyWait r22
 
-    // LCD_CONTROL(PORT) |= 0 << LCD_CONTROL_E;
-    ori r23, 0 << LCD_CONTROL_E
+    // LCD_CONTROL(PORT) &= ~(1 << LCD_CONTROL_E);
+    andi r23, ~(1 << LCD_CONTROL_E)
     out _SFR_IO_ADDR(LCD_CONTROL(PORT)), r23
 
     pop r17
@@ -174,12 +174,7 @@ lcdWrite:
     // writeRaw(c, false, false);
     clr r20
     clr r22
-    call writeRaw
-
-    // Workaround for bug where the last character written doesn't display
-    // readRaw(true);
-    ldi r24, 1
-    jmp readRaw
+    jmp writeRaw
 // }
 
 // void lcdWriteString(const char* str) {
@@ -202,12 +197,9 @@ lcdWriteString_write:
     rjmp lcdWriteString_write
 
 lcdWriteString_finish:
-    // Workaround for bug where the last character written doesn't display
-    // readRaw(true);
-    ldi r24, 1
     pop YH
     pop YL
-    jmp readRaw
+    ret
 // }
 
 // void lcdSetup() {
