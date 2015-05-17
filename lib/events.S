@@ -144,7 +144,7 @@ typedef struct _IntervalCallback {
     uint32_t when;
     struct _IntervalCallback* prev;
     struct _IntervalCallback* next;
-    void (*callback)(uint8_t, bool);
+    void (*callback)(uint8_t, bool); // = 0 for unallocated
 } IntervalCallback;
 */
 #define IntervalCallback_arg 0
@@ -169,8 +169,6 @@ typedef struct _DebounceCallback {
 
 // static IntervalCallback callbacksBuffer[MAX_CALLBACKS];
 .lcomm callbacksBuffer, sizeof_IntervalCallback * MAX_CALLBACKS
-// static IntervalCallback* callbacksBufferTop;
-.lcomm callbacksBufferTop, 2
 
 // static uint32_t ticks;
 .lcomm ticks, 4
@@ -224,35 +222,30 @@ setIntervalWithDelay: // r25:r24: callback, r22: arg, r21:r20: delay, r19:r18: m
     push YL
     push YH
 
-    // Deallocate any cleared buffers
-    lds XL, callbacksBufferTop
-    lds XH, callbacksBufferTop + 1
-    ldi r23, hi8(callbacksBuffer)
-    // while (callbacksBufferTop > callbacksBuffer && callbacksBufferTop[-1].callback == 0)
-setIntervalWithDelay_deallocateClearedBuffers:
-    cpi XL, lo8(callbacksBuffer)
-    cpc XH, r23
-    breq setIntervalWithDelay_deallocateClearedBuffers_end // callbacksBufferTop > callbacksBuffer &&
+    // Find a free buffer
+    // IntervalCallback* buffer = callbacksBuffer;
+    ldi YL, lo8(callbacksBuffer)
+    ldi YH, hi8(callbacksBuffer)
+    // for (buffer < callbacksBuffer + MAX_CALLBACKS; ++buffer)
+    ldi r23, hi8(callbacksBuffer + sizeof_IntervalCallback * MAX_CALLBACKS)
+setIntervalWithDelay_findFreeBuffer_start:
+    cpi YL, lo8(callbacksBuffer + sizeof_IntervalCallback * MAX_CALLBACKS)
+    cpc YH, r23
+    breq setIntervalWithDelay_findFreeBuffer_abort
 
-    movw YL, XL
-    sbiw YL, sizeof_IntervalCallback
-    ldd r30, Y + IntervalCallback_callback
-    cp r30, r1
-    ldd r30, Y + IntervalCallback_callback + 1
-    cpc r30, r1
-    brne setIntervalWithDelay_deallocateClearedBuffers_end // callbacksBufferTop[-1].callback == 0
+    //     if (buffer->callback == 0)
+    //         break;
+    ldd r26, Y + IntervalCallback_callback
+    ldd r27, Y + IntervalCallback_callback + 1
+    or r26, r27
+    brz setIntervalWithDelay_haveSpace
 
-    //    --callbacksBufferTop;
-    movw XL, YL
-    rjmp setIntervalWithDelay_deallocateClearedBuffers
-setIntervalWithDelay_deallocateClearedBuffers_end:
+    adiw YL, sizeof_IntervalCallback // (++buffer)
+    rjmp setIntervalWithDelay_findFreeBuffer_start
 
     // Abort if no more space
-    // if (callbacksBufferTop - callbacksBuffer >= MAX_CALLBACKS) {
-    ldi r23, hi8(callbacksBuffer + MAX_CALLBACKS)
-    cpi XL, lo8(callbacksBuffer + MAX_CALLBACKS)
-    cpc XH, r23
-    brlo setIntervalWithDelay_haveSpace
+    // if (buffer >= callbacksBuffer + MAX_CALLBACKS) {
+setIntervalWithDelay_findFreeBuffer_abort:
 
     //    wdt_enable(WDTO_15MS);
     //    while (1)
@@ -265,13 +258,8 @@ setIntervalWithDelay_abort:
     rjmp setIntervalWithDelay_abort
 
     // }
-setIntervalWithDelay_haveSpace:
-    // IntervalCallback* buffer = callbacksBufferTop++;
-    movw YL, XL
-    adiw XL, sizeof_IntervalCallback // At this point, Y is `buffer` and X is `callbacksBufferTop`
-    sts callbacksBufferTop, XL
-    sts callbacksBufferTop + 1, XH
 
+setIntervalWithDelay_haveSpace:
     // buffer->arg = arg;
     std Y + IntervalCallback_arg, r22
 
@@ -398,7 +386,7 @@ clearInterval_updatePreviousCallback_end:
     st X, ZH
 
 clearInterval_noNextCallback:
-    // Mark buffer for cleanup
+    // Mark buffer as unallocated
     // buffer->callback = 0;
     std Y + IntervalCallback_callback, r1
     std Y + IntervalCallback_callback + 1, r1
@@ -781,7 +769,7 @@ onTick_iterateCallbacks_start:
     tst r11
     brz onTick_iterateCallbacks_notLastTime
 
-    //             // Clear callback first to not run out of callback buffer memory if setIntervalWithDelay() is called
+    //             // Clear callback first to not run out of callback buffer memory if setIntervalWithDelay() is called recursively
     //             IntervalCallback* prev = buffer->prev;
     ldd r22, Y + IntervalCallback_prev
     ldd r23, Y + IntervalCallback_prev + 1
@@ -860,12 +848,6 @@ start_clearRam_start:
     cpi ZL, lo8(RAMEND)
     cpc ZH, r24
     brne start_clearRam_start
-
-    // callbacksBufferTop = callbacksBuffer;
-    ldi r24, lo8(callbacksBuffer)
-    ldi r25, hi8(callbacksBuffer)
-    sts callbacksBufferTop, r24
-    sts callbacksBufferTop + 1, r25
 
     // for (uint8_t i = 0; i < (_VECTORS_SIZE >> 2); ++i)
     //     interrupts[i] = unhandledInterrupt;

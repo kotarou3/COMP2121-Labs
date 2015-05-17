@@ -20,7 +20,7 @@ typedef struct _IntervalCallback {
     uint32_t when;
     struct _IntervalCallback* prev;
     struct _IntervalCallback* next;
-    void (*callback)(uint8_t, bool);
+    void (*callback)(uint8_t, bool); // = 0 for unallocated
 } IntervalCallback;
 
 typedef struct _DebounceCallback {
@@ -29,7 +29,6 @@ typedef struct _DebounceCallback {
 } DebounceCallback;
 
 static IntervalCallback callbacksBuffer[MAX_CALLBACKS];
-static IntervalCallback* callbacksBufferTop;
 
 static uint32_t ticks;
 static IntervalCallback* callbacks;
@@ -45,18 +44,19 @@ void* setInterval(void (*callback)(uint8_t, bool), uint8_t arg, uint16_t millise
 }
 
 void* setIntervalWithDelay(void (*callback)(uint8_t, bool), uint8_t arg, uint16_t delay, uint16_t milliseconds, uint16_t times) {
-    // Deallocate any cleared buffers
-    while (callbacksBufferTop > callbacksBuffer && callbacksBufferTop[-1].callback == 0)
-        --callbacksBufferTop;
+    // Find a free buffer
+    IntervalCallback* buffer = callbacksBuffer;
+    for (; buffer < callbacksBuffer + MAX_CALLBACKS; ++buffer)
+        if (buffer->callback == 0)
+            break;
 
     // Abort if no more space
-    if (callbacksBufferTop - callbacksBuffer >= MAX_CALLBACKS) {
+    if (buffer >= callbacksBuffer + MAX_CALLBACKS) {
         wdt_enable(WDTO_15MS);
         while (1)
             ;
     }
 
-    IntervalCallback* buffer = callbacksBufferTop++;
     buffer->arg = arg;
     buffer->ticks = MILLISECONDS_TO_TICKS(milliseconds);
     buffer->times = times;
@@ -86,7 +86,7 @@ void clearInterval(void* interval) {
     if (buffer->next)
         buffer->next->prev = buffer->prev;
 
-    // Mark buffer for cleanup
+    // Mark buffer as unallocated
     buffer->callback = 0;
 }
 
@@ -174,7 +174,7 @@ static void onTick() {
 
             buffer->when += buffer->ticks;
             if (isLastTime) {
-                // Clear callback first to not run out of callback buffer memory if setIntervalWithDelay() is called
+                // Clear callback first to not run out of callback buffer memory if setIntervalWithDelay() is called recursively
                 IntervalCallback* prev = buffer->prev;
                 clearInterval(buffer);
                 buffer = prev;
@@ -199,7 +199,6 @@ void setup();
     for (uint8_t* b = (uint8_t*)0x200; b < (uint8_t*)RAMEND; ++b)
         *b = 0;
 
-    callbacksBufferTop = callbacksBuffer;
     for (uint8_t i = 0; i < (_VECTORS_SIZE >> 2); ++i)
         interrupts[i] = unhandledInterrupt;
 
