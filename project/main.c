@@ -16,7 +16,12 @@
 #define DIM_LCD_BACKLIGHT_TIMEOUT 10000
 #define DIM_LCD_BACKLIGHT_FADE_LENGTH 500
 
+#define CHAR_BACKSLASH 1
 #define TURNTABLE_RPM 3
+
+// What the time defaults to if nothing is entered
+#define DEFAULT_TIME_MINUTES 1
+#define DEFAULT_TIME_SECONDS 0
 
 #define BUTTONS(reg) reg##D
 #define BUTTON_OPEN PD1
@@ -168,7 +173,7 @@ static void updateTimeDisplay(uint8_t minutes, uint8_t seconds, uint8_t digitsTo
 }
 
 static void rotateTurntable() {
-    static const char turntableCharMap[] PROGMEM = {'-', '/', '|', 1}; // 1 is backslash (See setup())
+    static const char turntableCharMap[] PROGMEM = {'-', '/', '|', CHAR_BACKSLASH};
 
     if (currentTurntableDirection == TURNTABLE_ANTICLOCKWISE) {
         ++currentTurntablePosition;
@@ -316,8 +321,9 @@ static void onEntryKeypadPress(char key) {
     } else if (key == '*') {
         // Start the microwave
         if (enteredDigits == 0) {
-            currentTime.minutes = 1;
-            currentTime.seconds = 0;
+            // No time entered, so we use the default
+            currentTime.minutes = DEFAULT_TIME_MINUTES;
+            currentTime.seconds = DEFAULT_TIME_SECONDS;
         }
         updateTimeDisplay(currentTime.minutes, currentTime.seconds, 4);
 
@@ -454,8 +460,8 @@ void setup() {
     keypadSetup();
     lcdSetup();
 
-    // Because the LCD doesn't have the backslash character, we add it in as custom character 1
-    lcdStartCustomGlyphWrite(1);
+    // Because the LCD doesn't have the backslash character, we add it in as a custom character
+    lcdStartCustomGlyphWrite(CHAR_BACKSLASH);
     lcdWrite(0x00); // 0b00000
     lcdWrite(0x10); // 0b10000
     lcdWrite(0x08); // 0b01000
