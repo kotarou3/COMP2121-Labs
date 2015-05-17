@@ -79,7 +79,7 @@
                     continue;
                 }
 
-                // Special case for including avr/io.h: Change to m2560.inc
+                // Special case for including avr/io.h: Change to m2560def.inc
                 if (lines[l].preprocessor.slice(-10) === "<avr/io.h>") {
                     lines[l].isChanged = true;
                     lines[l].preprocessor = lines[l].preprocessor.slice(0, -10) + "<m2560def.inc>";
