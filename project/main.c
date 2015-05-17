@@ -78,6 +78,7 @@ static enum {
 } currentDoorState;
 
 static void* beepInterval;
+static void* stopBeepTimeout;
 static void* dimLcdBacklightTimeout;
 
 static void* turntableRotateInterval;
@@ -109,10 +110,20 @@ static uint16_t udivmod8(uint8_t dividend, uint8_t divisor) {
     return (remainder << 8) | quotient;
 }
 
+static void stopBeep() {
+    stopBeepTimeout = 0;
+    // TODO
+}
+
 static void beep(uint8_t quarterSeconds, bool isLastBeep) {
     if (isLastBeep)
         beepInterval = 0;
+
     // TODO
+
+    if (stopBeepTimeout)
+        clearTimeout(stopBeepTimeout);
+    stopBeepTimeout = setTimeout((void (*)(uint8_t))stopBeep, 0, quarterSeconds * 250);
 }
 
 static void dimLcdBacklight() {
@@ -221,6 +232,10 @@ static void resetMicrowave() {
     resetLcdBacklightTimeout();
 
     // Stop any beeping
+    if (stopBeepTimeout) {
+        clearTimeout(stopBeepTimeout);
+        stopBeep();
+    }
     if (beepInterval) {
         clearInterval(beepInterval);
         beepInterval = 0;
@@ -279,7 +294,7 @@ static void stopMicrowave() {
         countdownTimeInterval = 0;
     }
 
-    beepInterval = setIntervalWithDelay(beep, ENTRY_BEEP_LENGTH, -FINISH_BEEP_INTERVAL * 250, FINISH_BEEP_INTERVAL * 250, FINISH_BEEP_TIMES);
+    beepInterval = setIntervalWithDelay(beep, FINISH_BEEP_LENGTH, -FINISH_BEEP_INTERVAL * 250, FINISH_BEEP_INTERVAL * 250, FINISH_BEEP_TIMES);
 
     lcdClearSection(false, 0, 5);
     for (const char* c = doneText; c < doneText + sizeof(doneText) - 1; ++c)
