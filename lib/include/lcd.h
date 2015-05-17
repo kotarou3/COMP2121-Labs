@@ -1,6 +1,10 @@
 #ifndef LCD_H
 #define LCD_H
 
+#define LCD_COLS 16
+
+#ifndef __ASSEMBLER__
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -14,5 +18,7 @@ void lcdWrite(char c);
 void lcdWriteString(const char* str);
 
 void lcdSetup();
+
+#endif
 
 #endif
