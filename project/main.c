@@ -6,6 +6,8 @@
 #include "keypad.h"
 #include "lcd.h"
 
+#include "magnetron.h"
+
 // In quarter seconds
 #define ENTRY_BEEP_LENGTH 1
 #define FINISH_BEEP_LENGTH 4
@@ -18,9 +20,6 @@
 
 #define CHAR_BACKSLASH 1
 #define TURNTABLE_RPM 3
-
-#define MAGNETRON_RPS 300
-#define MAGNETRON_POWER_MAX_INTERVAL 1000
 
 // What the time defaults to if nothing is entered
 #define DEFAULT_TIME_MINUTES 1
@@ -54,12 +53,6 @@ static struct {
 } currentTime;
 static uint8_t enteredDigits;
 
-typedef enum _PowerSetting {
-    POWER_MAX,
-    POWER_HALF,
-    POWER_QUARTER,
-    POWER_OFF
-} PowerSetting;
 static PowerSetting currentPowerSetting;
 
 static enum {
@@ -86,8 +79,6 @@ static void* dimLcdBacklightTimeout;
 
 static void* turntableRotateInterval;
 static void* countdownTimeInterval;
-static void* setMagnetronActiveInterval;
-static void* setMagnetronInactiveInterval;
 
 static void resetMicrowave();
 static void startMicrowave();
@@ -213,38 +204,6 @@ static void setTurntableSpeed(uint8_t rpm) {
 
     if (rpm != 0)
         turntableRotateInterval = setInterval((void (*)(uint8_t, bool))rotateTurntable, 0, 60L * 1000 / (rpm * (2 * TURNTABLE_LOOP)), 0);
-}
-
-static void setMagnetronActive(bool isActive) {
-    // TODO
-}
-
-static void setMagnetronPower(PowerSetting power) {
-    if (setMagnetronActiveInterval) {
-        clearInterval(setMagnetronActiveInterval);
-        setMagnetronActiveInterval = 0;
-    }
-    if (setMagnetronInactiveInterval) {
-        clearInterval(setMagnetronInactiveInterval);
-        setMagnetronInactiveInterval = 0;
-    }
-
-    if (power == POWER_OFF) {
-        setMagnetronActive(false);
-        return;
-    } else if (power == POWER_MAX) {
-        setMagnetronActive(true);
-        return;
-    }
-
-    uint16_t activeDuration;
-    if (power == POWER_HALF)
-        activeDuration = MAGNETRON_POWER_MAX_INTERVAL / 2;
-    else
-        activeDuration = MAGNETRON_POWER_MAX_INTERVAL / 4;
-
-    setMagnetronActiveInterval = setIntervalWithDelay((void (*)(uint8_t, bool))setMagnetronActive, true, -MAGNETRON_POWER_MAX_INTERVAL, MAGNETRON_POWER_MAX_INTERVAL, 0);
-    setMagnetronInactiveInterval = setIntervalWithDelay((void (*)(uint8_t, bool))setMagnetronActive, false, -MAGNETRON_POWER_MAX_INTERVAL + activeDuration, MAGNETRON_POWER_MAX_INTERVAL, 0);
 }
 
 static void countdownTime() {
