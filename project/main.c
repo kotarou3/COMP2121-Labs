@@ -6,15 +6,14 @@
 #include "keypad.h"
 #include "lcd.h"
 
+#include "beeper.h"
 #include "magnetron.h"
 
-// In quarter seconds
-#define ENTRY_BEEP_LENGTH 1
-#define FINISH_BEEP_LENGTH 4
-#define FINISH_BEEP_INTERVAL 8
+// In milliseconds
+#define ENTRY_BEEP_LENGTH 250
+#define FINISH_BEEP_LENGTH 1000
 #define FINISH_BEEP_TIMES 3
 
-// In milliseconds
 #define DIM_LCD_BACKLIGHT_TIMEOUT 10000
 #define DIM_LCD_BACKLIGHT_FADE_LENGTH 500
 
@@ -73,8 +72,6 @@ static enum {
     DOOR_OPENED
 } currentDoorState;
 
-static void* beepInterval;
-static void* stopBeepTimeout;
 static void* dimLcdBacklightTimeout;
 
 static void* turntableRotateInterval;
@@ -104,22 +101,6 @@ static uint16_t udivmod8(uint8_t dividend, uint8_t divisor) {
     }
 
     return (remainder << 8) | quotient;
-}
-
-static void stopBeep() {
-    stopBeepTimeout = 0;
-    // TODO
-}
-
-static void beep(uint8_t quarterSeconds, bool isLastBeep) {
-    if (isLastBeep)
-        beepInterval = 0;
-
-    // TODO
-
-    if (stopBeepTimeout)
-        clearTimeout(stopBeepTimeout);
-    stopBeepTimeout = setTimeout((void (*)(uint8_t))stopBeep, 0, quarterSeconds * 250);
 }
 
 static void dimLcdBacklight() {
@@ -224,14 +205,7 @@ static void resetMicrowave() {
     resetLcdBacklightTimeout();
 
     // Stop any beeping
-    if (stopBeepTimeout) {
-        clearTimeout(stopBeepTimeout);
-        stopBeep();
-    }
-    if (beepInterval) {
-        clearInterval(beepInterval);
-        beepInterval = 0;
-    }
+    stopBeep();
 
     // Clear any unwanted existing text
     updateTimeDisplay(0, 0, 0);
@@ -286,7 +260,7 @@ static void stopMicrowave() {
         countdownTimeInterval = 0;
     }
 
-    beepInterval = setIntervalWithDelay(beep, FINISH_BEEP_LENGTH, -FINISH_BEEP_INTERVAL * 250, FINISH_BEEP_INTERVAL * 250, FINISH_BEEP_TIMES);
+    setBeep(FINISH_BEEP_LENGTH, FINISH_BEEP_TIMES);
 
     lcdClearSection(false, 0, 5);
     for (const char* c = doneText; c < doneText + sizeof(doneText) - 1; ++c)
@@ -387,7 +361,7 @@ static void onRunningKeypadPress(char key) {
 }
 
 static void onKeypad(char key) {
-    beep(ENTRY_BEEP_LENGTH, true);
+    setBeep(ENTRY_BEEP_LENGTH, 1);
     resetLcdBacklightTimeout();
 
     if (currentDoorState == DOOR_OPENED)
@@ -433,7 +407,7 @@ static void onKeypad(char key) {
 }
 
 static void onOpenButton() {
-    beep(ENTRY_BEEP_LENGTH, true);
+    setBeep(ENTRY_BEEP_LENGTH, 1);
     resetLcdBacklightTimeout();
 
     if (currentDoorState == DOOR_OPENED)
@@ -451,7 +425,7 @@ static void onOpenButton() {
 }
 
 static void onCloseButton() {
-    beep(ENTRY_BEEP_LENGTH, true);
+    setBeep(ENTRY_BEEP_LENGTH, 1);
     resetLcdBacklightTimeout();
 
     if (currentDoorState == DOOR_CLOSED)
