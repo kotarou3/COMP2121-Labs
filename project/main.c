@@ -8,6 +8,7 @@
 
 #include "beeper.h"
 #include "magnetron.h"
+#include "turntable.h"
 
 // In milliseconds
 #define ENTRY_BEEP_LENGTH 250
@@ -16,9 +17,6 @@
 
 #define DIM_LCD_BACKLIGHT_TIMEOUT 10000
 #define DIM_LCD_BACKLIGHT_FADE_LENGTH 500
-
-#define CHAR_BACKSLASH 1
-#define TURNTABLE_RPM 3
 
 // What the time defaults to if nothing is entered
 #define DEFAULT_TIME_MINUTES 1
@@ -55,26 +53,12 @@ static uint8_t enteredDigits;
 static PowerSetting currentPowerSetting;
 
 static enum {
-    // In gradians
-    TURNTABLE_ZERO,
-    TURNTABLE_FIFTY,
-    TURNTABLE_ONE_HUNDRED,
-    TURNTABLE_ONE_HUNDRED_AND_FIFTY,
-    TURNTABLE_LOOP
-} currentTurntablePosition;
-static enum {
-    TURNTABLE_ANTICLOCKWISE,
-    TURNTABLE_CLOCKWISE
-} currentTurntableDirection;
-
-static enum {
     DOOR_CLOSED,
     DOOR_OPENED
 } currentDoorState;
 
 static void* dimLcdBacklightTimeout;
 
-static void* turntableRotateInterval;
 static void* countdownTimeInterval;
 
 static void resetMicrowave();
@@ -160,33 +144,6 @@ static void updateTimeDisplay(uint8_t minutes, uint8_t seconds, uint8_t digitsTo
     }
 }
 
-static void rotateTurntable() {
-    static const char turntableCharMap[] PROGMEM = {'-', '/', '|', CHAR_BACKSLASH};
-
-    if (currentTurntableDirection == TURNTABLE_ANTICLOCKWISE) {
-        ++currentTurntablePosition;
-        if (currentTurntablePosition == TURNTABLE_LOOP)
-            currentTurntablePosition = TURNTABLE_ZERO;
-    } else {
-        if (currentTurntablePosition == TURNTABLE_ZERO)
-            currentTurntablePosition = TURNTABLE_LOOP;
-        --currentTurntablePosition;
-    }
-
-    lcdSetCursor(false, LCD_COLS - 1);
-    lcdWrite(pgm_read_byte(&turntableCharMap[currentTurntablePosition]));
-}
-
-static void setTurntableSpeed(uint8_t rpm) {
-    if (turntableRotateInterval) {
-        clearInterval(turntableRotateInterval);
-        turntableRotateInterval = 0;
-    }
-
-    if (rpm != 0)
-        turntableRotateInterval = setInterval((void (*)(uint8_t, bool))rotateTurntable, 0, 60L * 1000 / (rpm * (2 * TURNTABLE_LOOP)), 0);
-}
-
 static void countdownTime() {
     if (currentTime.seconds == 0) {
         --currentTime.minutes;
@@ -227,8 +184,8 @@ static void startMicrowave() {
 
     countdownTimeInterval = setInterval((void (*)(uint8_t, bool))countdownTime, 0, 1000, 0);
 
-    currentTurntableDirection = !currentTurntableDirection;
-    setTurntableSpeed(TURNTABLE_RPM);
+    reverseTurntableDirection();
+    setTurntableActive(true);
     setMagnetronPower(currentPowerSetting);
 }
 
@@ -237,7 +194,7 @@ static void pauseMicrowave() {
     resetLcdBacklightTimeout();
 
     setMagnetronPower(POWER_OFF);
-    setTurntableSpeed(0);
+    setTurntableActive(false);
 
     if (countdownTimeInterval) {
         clearInterval(countdownTimeInterval);
@@ -253,7 +210,7 @@ static void stopMicrowave() {
     resetLcdBacklightTimeout();
 
     setMagnetronPower(POWER_OFF);
-    setTurntableSpeed(0);
+    setTurntableActive(false);
 
     if (countdownTimeInterval) {
         clearInterval(countdownTimeInterval);
@@ -440,17 +397,7 @@ static void onCloseButton() {
 void setup() {
     keypadSetup();
     lcdSetup();
-
-    // Because the LCD doesn't have the backslash character, we add it in as a custom character
-    lcdStartCustomGlyphWrite(CHAR_BACKSLASH);
-    lcdWrite(0x00); // 0b00000
-    lcdWrite(0x10); // 0b10000
-    lcdWrite(0x08); // 0b01000
-    lcdWrite(0x04); // 0b00100
-    lcdWrite(0x02); // 0b00010
-    lcdWrite(0x01); // 0b00001
-    lcdWrite(0x00); // 0b00000
-    lcdWrite(0x00); // 0b00000
+    turntableSetup();
 
     BUTTONS(DDR) = ~((1 << BUTTON_OPEN) | (1 << BUTTON_CLOSE));
     BUTTONS(PORT) = (1 << BUTTON_OPEN) | (1 << BUTTON_CLOSE);
@@ -474,6 +421,5 @@ void setup() {
     lcdSetCursor(true, LCD_COLS - 1);
     lcdWrite('C');
 
-    rotateTurntable();
     resetMicrowave();
 }
