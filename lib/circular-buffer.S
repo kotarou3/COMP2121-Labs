@@ -29,6 +29,9 @@ CircularBuffer_init: // r25:r24: buffer, r23:r22: rawBuffer, r21:r20: rawBufferS
     // buffer->isOverwriteAllowed = isOverwriteAllowed;
     std Z + CircularBuffer_isOverwriteAllowed, r18
 
+    // buffer->isFull = false;
+    std Z + CircularBuffer_isFull, r1
+
     // buffer->bufferStart = rawBuffer;
     std Z + CircularBuffer_bufferStart, r22
     std Z + CircularBuffer_bufferStart + 1, r23
@@ -53,14 +56,29 @@ CircularBuffer_init: // r25:r24: buffer, r23:r22: rawBuffer, r21:r20: rawBufferS
 CircularBuffer_size:
     movw ZL, r24
 
+    // if (buffer->isFull)
+    ldd r24, Z + CircularBuffer_isFull
+    tst r24
+    brz CircularBuffer_size_notFull
+
+    //     return buffer->bufferEnd - buffer->bufferStart;
+    ldd r24, Z + CircularBuffer_bufferEnd
+    ldd r25, Z + CircularBuffer_bufferEnd + 1
+    ldd r22, Z + CircularBuffer_bufferStart
+    ldd r23, Z + CircularBuffer_bufferStart + 1
+    sub r24, r22
+    sbc r25, r23
+    ret
+
+CircularBuffer_size_notFull:
     ldd r20, Z + CircularBuffer_dataStart
     ldd r21, Z + CircularBuffer_dataStart + 1
     ldd r18, Z + CircularBuffer_dataEnd
     ldd r19, Z + CircularBuffer_dataEnd + 1
-    // if (buffer->dataEnd >= buffer->dataStart)
+    // else if (buffer->dataEnd >= buffer->dataStart)
     cp r18, r20
     cpc r19, r21
-    brlo CircularBuffer_wrapped
+    brlo CircularBuffer_size_wrapped
 
     //     return buffer->dataEnd - buffer->dataStart;
     movw r24, r18
@@ -69,7 +87,7 @@ CircularBuffer_size:
     ret
 
     // else
-CircularBuffer_wrapped:
+CircularBuffer_size_wrapped:
     //     return (buffer->bufferEnd - buffer->dataStart) + (buffer->dataEnd - buffer->bufferStart);
     ldd r24, Z + CircularBuffer_bufferEnd
     ldd r25, Z + CircularBuffer_bufferEnd + 1
@@ -89,7 +107,7 @@ CircularBuffer_wrapped:
 CircularBuffer_isEmpty:
     movw ZL, r24
 
-    // return buffer->dataStart == buffer->dataEnd;
+    // return buffer->dataStart == buffer->dataEnd && !buffer->isFull;
     clr r24
     ldd r20, Z + CircularBuffer_dataStart
     ldd r21, Z + CircularBuffer_dataStart + 1
@@ -97,8 +115,12 @@ CircularBuffer_isEmpty:
     ldd r19, Z + CircularBuffer_dataEnd + 1
     cp r20, r18
     cpc r21, r19
-    skipIf ne
-    inc r24
+    brne CircularBuffer_isEmpty_end
+    ldd r24, Z + CircularBuffer_isFull
+    ldi r25, 1
+    eor r24, r25
+
+CircularBuffer_isEmpty_end:
     ret
 // }
 
@@ -115,6 +137,9 @@ CircularBuffer_clear:
     std Z + CircularBuffer_dataStart, r24
     std Z + CircularBuffer_dataStart + 1, r25
 
+    // buffer->isFull = false;
+    std Z + CircularBuffer_isFull, r1
+
     ret
 // }
 
@@ -123,39 +148,47 @@ CircularBuffer_clear:
 CircularBuffer_pushBack:
     movw ZL, r24
 
+    // if (buffer->isFull && !buffer->isOverwriteAllowed)
+    //     return;
+    ldd r20, Z + CircularBuffer_isFull
+    tst r20
+    brz CircularBuffer_pushBack_canWrite
+    ldd r21, Z + CircularBuffer_isOverwriteAllowed
+    tst r21
+    brz CircularBuffer_pushBack_end
+
+CircularBuffer_pushBack_canWrite:
     // *buffer->dataEnd = data;
     ldd XL, Z + CircularBuffer_dataEnd
     ldd XH, Z + CircularBuffer_dataEnd + 1
     st X, r22
 
-    // uint8_t* newDataEnd = incrementPointer(buffer, buffer->dataEnd);
+    // buffer->dataEnd = incrementPointer(buffer, buffer->dataEnd);
     incrementPointer Z, XH, XL
+    std Z + CircularBuffer_dataEnd, XL
+    std Z + CircularBuffer_dataEnd + 1, XH
 
-    // if (newDataEnd == buffer->dataStart) {
     ldd r24, Z + CircularBuffer_dataStart
     ldd r25, Z + CircularBuffer_dataStart + 1
-    cp XL, r24
-    cpc XH, r25
-    brne CircularBuffer_pushBack_notFull
+    // if (buffer->isFull)
+    tst r20
+    brz CircularBuffer_pushBack_notAlreadyFull
 
-    //     if (buffer->overwriteMode) {
-    ldd r22, Z + CircularBuffer_isOverwriteAllowed
-    tst r22
-    brz CircularBuffer_pushBack_end
-
-    //         buffer->dataStart = incrementPointer(buffer, buffer->dataStart);
+    //     buffer->dataStart = incrementPointer(buffer, buffer->dataStart);
     incrementPointer Z, r25, r24
     std Z + CircularBuffer_dataStart, r24
     std Z + CircularBuffer_dataStart + 1, r25
+    ret
 
-CircularBuffer_pushBack_notFull:
-    //         buffer->dataEnd = newDataEnd;
-    //     }
-    // } else {
-    //     buffer->dataEnd = newDataEnd;
-    std Z + CircularBuffer_dataEnd, XL
-    std Z + CircularBuffer_dataEnd + 1, XH
-    // }
+CircularBuffer_pushBack_notAlreadyFull:
+    // else if (buffer->dataEnd == buffer->dataStart)
+    cp XL, r24
+    cpc XH, r25
+    brne CircularBuffer_pushBack_end
+
+    //     buffer->isFull = true;
+    ldi r24, 1
+    std Z + CircularBuffer_isFull, r24
 
 CircularBuffer_pushBack_end:
     ret
@@ -175,6 +208,9 @@ CircularBuffer_popFront:
     incrementPointer Z, XH, XL
     std Z + CircularBuffer_dataStart, XL
     std Z + CircularBuffer_dataStart + 1, XH
+
+    // buffer->isFull = false;
+    std Z + CircularBuffer_isFull, r1
 
     // return result;
     ret
