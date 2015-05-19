@@ -263,7 +263,7 @@ setIntervalWithDelay_haveSpace:
     // buffer->arg = arg;
     std Y + IntervalCallback_arg, r22
 
-    // #define MILLISECONDS_TO_TICKS(a) (((a) + 7) >> 3) // 8 ticks per millisecond for 16 Hz
+    // #define MILLISECONDS_TO_TICKS(a) (((a) + 7) >> 3) // 8 milliseconds per tick for 16 Hz
     // buffer->ticks = MILLISECONDS_TO_TICKS(milliseconds);
     movw r22, r18
     subi r22, lo8(-7)
@@ -644,7 +644,7 @@ onDebouncedInterrupt:
     .global busyWait
 busyWait:
 
-    // #define MILLISECONDS_TO_TICKS(a) (((a) + 7) >> 3) // 8 ticks per millisecond for 16 Hz
+    // #define MILLISECONDS_TO_TICKS(a) (((a) + 7) >> 3) // 8 milliseconds per tick for 16 Hz
     // uint16_t target = TCNT5 + MILLISECONDS_TO_TICKS((uint16_t)milliseconds * 125);
     lds r22, _SFR_MEM_ADDR(TCNT5L)
     lds r23, _SFR_MEM_ADDR(TCNT5H)
