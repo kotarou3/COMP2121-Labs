@@ -7,8 +7,8 @@
 !lib/include/m2560def.inc
 !lib/include/util.inc
 
-!*/
-!*/*.c
-!*/*.h
-!*/*.S
-!*/Makefile
+!**/
+!**/*.c
+!**/*.h
+!**/*.S
+!**/Makefile
