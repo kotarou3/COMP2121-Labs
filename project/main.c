@@ -2,6 +2,7 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
+#include "divmod.h"
 #include "events.h"
 #include "keypad.h"
 #include "lcd.h"
@@ -65,27 +66,6 @@ static void resetMicrowave();
 static void startMicrowave();
 static void pauseMicrowave();
 static void stopMicrowave();
-
-// Returns remainder in high byte, quotient in low byte
-static uint16_t udivmod8(uint8_t dividend, uint8_t divisor) {
-    uint8_t quotient = 0;
-    uint8_t remainder = 0;
-
-    // Binary long division: http://en.wikipedia.org/wiki/Division_algorithm#Integer_division_.28unsigned.29_with_remainder
-    // Modified to be more optimal for AVR
-    for (uint8_t i = 8; i > 0; --i) {
-        remainder <<= 1;
-        remainder |= dividend >> 7;
-        dividend <<= 1;
-        quotient <<= 1;
-        if (remainder >= divisor) {
-            remainder -= divisor;
-            quotient |= 1;
-        }
-    }
-
-    return (remainder << 8) | quotient;
-}
 
 static void dimLcdBacklight() {
     dimLcdBacklightTimeout = 0;
