@@ -5,6 +5,7 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
+#include "divmod.h"
 #include "events.h"
 #include "lcd.h"
 
@@ -111,6 +112,20 @@ void lcdWriteString(const char* str) {
 void lcdWriteStringProgMem(const char* str) {
     for (char c = pgm_read_byte(str); c; c = pgm_read_byte(++str))
         writeRaw(c, false, false);
+}
+
+void lcdWriteUInt(uint16_t n) {
+    char buf[6]; // Maximum 5 digits for 16 bits + terminating null
+    char* start = &buf[5];
+    *start = 0;
+    while (n >= 10) {
+        uint32_t divmod = udivmod16(n, 10);
+        *--start = (uint8_t)(divmod >> 16) + '0';
+        n = divmod & 0xffff;
+    }
+    *--start = (uint8_t)n + '0';
+
+    lcdWriteString(start);
 }
 
 void lcdSetup() {

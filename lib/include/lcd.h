@@ -17,6 +17,7 @@ void lcdStartCustomGlyphWrite(char c);
 void lcdWrite(char c);
 void lcdWriteString(const char* str);
 void lcdWriteStringProgMem(const char* str);
+void lcdWriteUInt(uint16_t n);
 
 void lcdSetup();
 

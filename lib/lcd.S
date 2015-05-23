@@ -281,6 +281,62 @@ lcdWriteStringProgMem_finish:
     ret
 // }
 
+// void lcdWriteUInt(uint16_t n) {
+    .global lcdWriteUInt
+lcdWriteUInt:
+    push YL
+    push YH
+
+    // char buf[6]; // Maximum 5 digits for 16 bits + terminating null
+    // char* start = &buf[5];
+    in YL, _SFR_IO_ADDR(SPL)
+    in YH, _SFR_IO_ADDR(SPH)
+    rcall . // +3 stack space
+    rcall . // +3 stack space
+
+    // *start = 0;
+    st Y, r1
+
+    // while (n >= 10) {
+lcdWriteUInt_convertToDecimal_start:
+    cpi r24, 10
+    cpc r25, r1
+    brlo lcdWriteUInt_convertToDecimal_end
+
+    //     uint32_t divmod = udivmod16(n, 10);
+    ldi r22, 10
+    clr r23
+    call udivmod16
+
+    //     *--start = (uint8_t)(divmod >> 16) + '0';
+    subi r24, -'0'
+    st -Y, r24
+
+    //     n = divmod & 0xffff;
+    movw r24, r22
+
+    rjmp lcdWriteUInt_convertToDecimal_start
+    // }
+lcdWriteUInt_convertToDecimal_end:
+    // *--start = (uint8_t)n + '0';
+    subi r24, -'0'
+    st -Y, r24
+
+    // lcdWriteString(start);
+    movw r24, YL
+    call lcdWriteString
+
+    pop r0
+    pop r0
+    pop r0
+    pop r0
+    pop r0
+    pop r0
+    pop YH
+    pop YL
+    ret
+// }
+
 // void lcdSetup() {
     .global lcdSetup
 lcdSetup:
