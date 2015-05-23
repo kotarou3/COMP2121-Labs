@@ -3,6 +3,7 @@
 #endif
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 
 #include "events.h"
 #include "lcd.h"
@@ -105,6 +106,11 @@ void lcdWrite(char c) {
 void lcdWriteString(const char* str) {
     for (; *str; ++str)
         writeRaw(*str, false, false);
+}
+
+void lcdWriteStringProgMem(const char* str) {
+    for (char c = pgm_read_byte(str); c; c = pgm_read_byte(++str))
+        writeRaw(c, false, false);
 }
 
 void lcdSetup() {

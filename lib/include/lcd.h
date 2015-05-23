@@ -16,6 +16,7 @@ void lcdShiftCursor(bool isRight);
 void lcdStartCustomGlyphWrite(char c);
 void lcdWrite(char c);
 void lcdWriteString(const char* str);
+void lcdWriteStringProgMem(const char* str);
 
 void lcdSetup();
 

@@ -200,12 +200,10 @@ static void stopMicrowave() {
     setBeep(FINISH_BEEP_LENGTH, FINISH_BEEP_TIMES);
 
     lcdClearSection(false, 0, 5);
-    for (const char* c = doneText; c < doneText + sizeof(doneText) - 1; ++c)
-        lcdWrite(pgm_read_byte(c));
+    lcdWriteStringProgMem(doneText);
 
     lcdSetCursor(true, 0);
-    for (const char* c = removeFoodText; c < removeFoodText + sizeof(removeFoodText) - 1; ++c)
-        lcdWrite(pgm_read_byte(c));
+    lcdWriteStringProgMem(removeFoodText);
 }
 
 static void onEntryKeypadPress(char key) {
@@ -257,8 +255,7 @@ static void onEntryKeypadPress(char key) {
         currentMode = MODE_POWER_SELECT;
 
         lcdSetCursor(true, 0);
-        for (const char* c = setPowerText; c < setPowerText + sizeof(setPowerText) - 1; ++c)
-            lcdWrite(pgm_read_byte(c));
+        lcdWriteStringProgMem(setPowerText);
     }
 }
 

@@ -253,6 +253,34 @@ lcdWriteString_finish:
     ret
 // }
 
+// void lcdWriteStringProgMem(const char* str) {
+    .global lcdWriteStringProgMem
+lcdWriteStringProgMem:
+    push YL
+    push YH
+    movw YL, r24
+
+    // for (char c = pgm_read_byte(str); c; c = pgm_read_byte(++str))
+lcdWriteStringProgMem_write:
+    movw ZL, YL
+    lpm r24, Z
+    tst r24
+    brz lcdWriteStringProgMem_finish
+
+    //     writeRaw(c, false, false);
+    clr r20
+    clr r22
+    call writeRaw
+
+    adiw YL, 1
+    rjmp lcdWriteStringProgMem_write
+
+lcdWriteStringProgMem_finish:
+    pop YH
+    pop YL
+    ret
+// }
+
 // void lcdSetup() {
     .global lcdSetup
 lcdSetup:
