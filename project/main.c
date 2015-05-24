@@ -374,15 +374,16 @@ static void onCloseButton() {
 void setup() {
     keypadSetup();
     lcdSetup();
+    magnetronSetup();
     turntableSetup();
 
-    BUTTONS(DDR) = ~((1 << BUTTON_OPEN) | (1 << BUTTON_CLOSE));
-    BUTTONS(PORT) = (1 << BUTTON_OPEN) | (1 << BUTTON_CLOSE);
+    BUTTONS(DDR) &= ~((1 << BUTTON_OPEN) | (1 << BUTTON_CLOSE));
+    BUTTONS(PORT) |= (1 << BUTTON_OPEN) | (1 << BUTTON_CLOSE);
 
-    EICRA = // Falling edge for buttons
-        (1 << BUTTON_OPEN_INT(ISC, 1)) | (0 << BUTTON_OPEN_INT(ISC, 0)) |
-        (1 << BUTTON_CLOSE_INT(ISC, 1)) | (0 << BUTTON_CLOSE_INT(ISC, 0));
-    EIMSK = (1 << BUTTON_OPEN_INT(INT)) | (1 << BUTTON_CLOSE_INT(INT));
+    // Falling edge for buttons
+    EICRA &= ~(0 << BUTTON_OPEN_INT(ISC, 0)) & ~(0 << BUTTON_CLOSE_INT(ISC, 0));
+    EICRA |= (1 << BUTTON_OPEN_INT(ISC, 1)) | (1 << BUTTON_CLOSE_INT(ISC, 1));
+    EIMSK |= (1 << BUTTON_OPEN_INT(INT)) | (1 << BUTTON_CLOSE_INT(INT));
 
     POWER_LEDS(DDR) = 0xff;
     POWER_LEDS(PORT) = POWER_LEDS_MAX_MASK;

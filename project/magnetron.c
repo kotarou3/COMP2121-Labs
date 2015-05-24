@@ -3,16 +3,17 @@
 #include <avr/io.h>
 
 #include "events.h"
+#include "motor.h"
 #include "magnetron.h"
 
-#define MAGNETRON_RPS 300
+#define MAGNETRON_RPS 75
 #define MAGNETRON_POWER_MAX_INTERVAL 1000
 
 static void* setMagnetronActiveInterval;
 static void* setMagnetronInactiveInterval;
 
 static void setMagnetronActive(bool isActive) {
-    // TODO
+    motorSetRps(isActive ? MAGNETRON_RPS : 0);
 }
 
 void setMagnetronPower(PowerSetting power) {
@@ -41,4 +42,8 @@ void setMagnetronPower(PowerSetting power) {
 
     setMagnetronActiveInterval = setIntervalWithDelay((void (*)(uint8_t, bool))setMagnetronActive, true, -MAGNETRON_POWER_MAX_INTERVAL, MAGNETRON_POWER_MAX_INTERVAL, 0);
     setMagnetronInactiveInterval = setIntervalWithDelay((void (*)(uint8_t, bool))setMagnetronActive, false, -MAGNETRON_POWER_MAX_INTERVAL + activeDuration, MAGNETRON_POWER_MAX_INTERVAL, 0);
+}
+
+void magnetronSetup() {
+    motorSetup();
 }
