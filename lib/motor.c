@@ -12,7 +12,7 @@
 #define MAX_RPS 100
 #define RPS_SAMPLE_SIZE 4
 
-#define CHECK_RPS_INTERVAL 150
+#define CHECK_RPS_INTERVAL 250
 
 #define PWM_HALF_PERIOD 1000 // In clock cycles (= TOP)
 #define MIN_DUTY_CYCLE_STEP_INTERVAL 10
@@ -117,8 +117,15 @@ static void checkRps() {
 }
 
 void motorSetRps(uint8_t rps) {
+    // If the change in rps was large (> MAX_RPS / 2), use a linear estimate for the new duty cycle.
+    // Otherwise, just let checkRps() adjust it normally.
+
+    if (rps > targetRps + MAX_RPS / 2 || rps + MAX_RPS / 2 < targetRps)
+        topDutyCycle = bottomDutyCycle = PWM_TIMER(OCR, B) = rps * (PWM_HALF_PERIOD / MAX_RPS);
+    else
+        topDutyCycle = bottomDutyCycle = PWM_TIMER(OCR, B);
+
     targetRps = rps;
-    topDutyCycle = bottomDutyCycle = PWM_TIMER(OCR, B);
 }
 
 void motorSetup() {

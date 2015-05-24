@@ -6,7 +6,7 @@
 #define MAX_RPS 100
 #define RPS_SAMPLE_SIZE 4
 
-#define CHECK_RPS_INTERVAL 150
+#define CHECK_RPS_INTERVAL 250
 
 #define PWM_HALF_PERIOD 1000 // In clock cycles (= TOP)
 #define MIN_DUTY_CYCLE_STEP_INTERVAL 10
@@ -315,16 +315,41 @@ checkRps_updateDutyCycle:
     .global motorSetRps
 motorSetRps:
 
+    // If the change in rps was large (> MAX_RPS / 2), use a linear estimate for the new duty cycle.
+    // Otherwise, just let checkRps() adjust it normally.
+
+    // if (rps > targetRps + MAX_RPS / 2 || rps + MAX_RPS / 2 < targetRps)
+    lds r22, targetRps
+    mov r23, r22
+    subi r22, -(MAX_RPS / 2 + 1)
+    cp r24, r22
+    brsh motorSetRps_largeChange
+
+    mov r25, r24
+    subi r25, -(MAX_RPS / 2 + 1)
+    cp r25, r23
+    brsh motorSetRps_smallChange
+
+motorSetRps_largeChange:
+    //     topDutyCycle = bottomDutyCycle = PWM_TIMER(OCR, B) = rps * (PWM_HALF_PERIOD / MAX_RPS);
+    ldi r22, PWM_HALF_PERIOD / MAX_RPS
+    mul r24, r22
+    sts _SFR_MEM_ADDR(PWM_TIMER_S(OCR, BH)), r1
+    sts _SFR_MEM_ADDR(PWM_TIMER_S(OCR, BL)), r0
+    clr r1
+
+motorSetRps_smallChange:
+    // else
+    //     topDutyCycle = bottomDutyCycle = PWM_TIMER(OCR, B);
+    lds r22, _SFR_MEM_ADDR(PWM_TIMER_S(OCR, BL))
+    lds r23, _SFR_MEM_ADDR(PWM_TIMER_S(OCR, BH))
+    sts topDutyCycle, r22
+    sts topDutyCycle + 1, r23
+    sts bottomDutyCycle, r22
+    sts bottomDutyCycle + 1, r23
+
     // targetRps = rps;
     sts targetRps, r24
-
-    // topDutyCycle = bottomDutyCycle = PWM_TIMER(OCR, B);
-    lds r24, _SFR_MEM_ADDR(PWM_TIMER_S(OCR, BL))
-    lds r25, _SFR_MEM_ADDR(PWM_TIMER_S(OCR, BH))
-    sts topDutyCycle, r24
-    sts topDutyCycle + 1, r25
-    sts bottomDutyCycle, r24
-    sts bottomDutyCycle + 1, r25
 
     ret
 // }
