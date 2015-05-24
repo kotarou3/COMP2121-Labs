@@ -13,7 +13,7 @@ ifeq ("$(wildcard S2asm.jison)", "")
 	$(MAKE) S2asm.js -C ../lib
 endif
 
-prepareHexFiles = echo -n $$'\#define __ASSEMBLER__\n\#define F_CPU 16000000\n$(foreach file, $(1), \#include "$(file)"\n)' > $(2)
+prepareAsmFiles = echo -n $$'\#define __ASSEMBLER__\n\#define F_CPU 16000000\n$(foreach file, $(1), \#include "$(file)"\n)' > $(2)
 
 .PHONY: all clean upload-%
 
