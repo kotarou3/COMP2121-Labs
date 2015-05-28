@@ -9,12 +9,31 @@
 #define DIM_LCD_BACKLIGHT_TIMEOUT 10000
 #define DIM_LCD_BACKLIGHT_FADE_LENGTH 500
 
+#define BACKLIGHT_PWM_HALF_PERIOD 63 // In clock cycles (= TOP)
+
+#define BACKLIGHT_PWM_OUTPUT(reg) reg##H
+#define BACKLIGHT_PWM_OUTPUT_BIT PH6
+#define BACKLIGHT_PWM_TIMER(reg, ...) reg##2##__VA_ARGS__
+
 static bool isDimmingEnabled;
 static void* dimLcdBacklightTimeout;
+static void* doDimInterval;
+
+static void doDim() {
+    if (BACKLIGHT_PWM_TIMER(OCR, B) == 0) {
+        clearInterval(doDimInterval);
+        doDimInterval = 0;
+        return;
+    }
+
+    --BACKLIGHT_PWM_TIMER(OCR, B);
+}
 
 static void dimLcdBacklight() {
     dimLcdBacklightTimeout = 0;
-    // TODO
+
+    if (!doDimInterval)
+        doDimInterval = setInterval((void (*)(uint8_t, bool))doDim, 0, DIM_LCD_BACKLIGHT_FADE_LENGTH / BACKLIGHT_PWM_HALF_PERIOD, 0);
 }
 
 void displayActivate() {
@@ -23,7 +42,7 @@ void displayActivate() {
         dimLcdBacklightTimeout = 0;
     }
 
-    // TODO: Light up LCD
+    BACKLIGHT_PWM_TIMER(OCR, B) = BACKLIGHT_PWM_HALF_PERIOD;
 
     if (isDimmingEnabled)
         dimLcdBacklightTimeout = setTimeout((void (*)(uint8_t))dimLcdBacklight, 0, DIM_LCD_BACKLIGHT_TIMEOUT);
@@ -102,6 +121,14 @@ void displayStatusClear() {
 
 void displaySetup() {
     lcdSetup();
+
+    // Setup PWM timer in phase correct mode, with no prescaler
+    // Clear/Set output on OCRnB compare match when up/down-counting
+    BACKLIGHT_PWM_TIMER(TCCR, A) = (1 << BACKLIGHT_PWM_TIMER(WGM, 0)) | (1 << BACKLIGHT_PWM_TIMER(COM, B1)) | (0 << BACKLIGHT_PWM_TIMER(COM, B0));
+    BACKLIGHT_PWM_TIMER(TCCR, B) = (1 << BACKLIGHT_PWM_TIMER(WGM, 2)) | (1 << BACKLIGHT_PWM_TIMER(CS, 0));
+    BACKLIGHT_PWM_TIMER(OCR, A) = BACKLIGHT_PWM_HALF_PERIOD; // TOP
+    BACKLIGHT_PWM_TIMER(OCR, B) = BACKLIGHT_PWM_HALF_PERIOD; // Duty Cycle
+    BACKLIGHT_PWM_OUTPUT(DDR) = 1 << BACKLIGHT_PWM_OUTPUT_BIT;
 
     displayUpdateDoor(false);
     displayEnableDimming(true);
