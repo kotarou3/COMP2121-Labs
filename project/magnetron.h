@@ -9,6 +9,6 @@ typedef enum _PowerSetting {
 } PowerSetting;
 
 void magnetronSetup();
-void setMagnetronPower(PowerSetting power);
+void magnetronSetPower(PowerSetting power);
 
 #endif

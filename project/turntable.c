@@ -43,7 +43,7 @@ static void rotateTurntable() {
     lcdWrite(pgm_read_byte(&turntableCharMap[currentTurntablePosition]));
 }
 
-void setTurntableActive(bool isActive) {
+void turntableSetActive(bool isActive) {
     if (turntableRotateInterval && isActive)
         return;
 
@@ -58,7 +58,7 @@ void setTurntableActive(bool isActive) {
     }
 }
 
-void reverseTurntableDirection() {
+void turntableReverseDirection() {
     currentTurntableDirection = !currentTurntableDirection;
 }
 

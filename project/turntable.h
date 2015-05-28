@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 void turntableSetup();
-void setTurntableActive(bool isActive);
-void reverseTurntableDirection();
+void turntableSetActive(bool isActive);
+void turntableReverseDirection();
 
 #endif

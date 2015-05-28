@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-void setBeep(uint16_t length, uint8_t times);
-void stopBeep();
+void beepSet(uint16_t length, uint8_t times);
+void beepStop();
 
 #endif

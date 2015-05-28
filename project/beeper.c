@@ -19,7 +19,7 @@ static void setBeepActive(bool isActive, bool isLastBeep) {
     // TODO
 }
 
-void setBeep(uint16_t length, uint8_t times) {
+void beepSet(uint16_t length, uint8_t times) {
     if (setBeepActiveInterval) {
         clearInterval(setBeepActiveInterval);
         setBeepActiveInterval = 0;
@@ -36,7 +36,7 @@ void setBeep(uint16_t length, uint8_t times) {
     setBeepInactiveInterval = setIntervalWithDelay((void (*)(uint8_t, bool))setBeepActive, false, -length, 2 * length, times);
 }
 
-void stopBeep() {
-    setBeep(0, 0);
+void beepStop() {
+    beepSet(0, 0);
     setBeepActive(false, false);
 }

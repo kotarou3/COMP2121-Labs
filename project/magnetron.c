@@ -16,7 +16,7 @@ static void setMagnetronActive(bool isActive) {
     motorSetRps(isActive ? MAGNETRON_RPS : 0);
 }
 
-void setMagnetronPower(PowerSetting power) {
+void magnetronSetPower(PowerSetting power) {
     if (setMagnetronActiveInterval) {
         clearInterval(setMagnetronActiveInterval);
         setMagnetronActiveInterval = 0;

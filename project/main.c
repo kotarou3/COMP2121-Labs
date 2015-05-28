@@ -142,7 +142,7 @@ static void resetMicrowave() {
     resetLcdBacklightTimeout();
 
     // Stop any beeping
-    stopBeep();
+    beepStop();
 
     // Clear any unwanted existing text
     updateTimeDisplay(0, 0, 0);
@@ -164,17 +164,17 @@ static void startMicrowave() {
 
     countdownTimeInterval = setInterval((void (*)(uint8_t, bool))countdownTime, 0, 1000, 0);
 
-    reverseTurntableDirection();
-    setTurntableActive(true);
-    setMagnetronPower(currentPowerSetting);
+    turntableReverseDirection();
+    turntableSetActive(true);
+    magnetronSetPower(currentPowerSetting);
 }
 
 static void pauseMicrowave() {
     currentMode = MODE_PAUSED;
     resetLcdBacklightTimeout();
 
-    setMagnetronPower(POWER_OFF);
-    setTurntableActive(false);
+    magnetronSetPower(POWER_OFF);
+    turntableSetActive(false);
 
     if (countdownTimeInterval) {
         clearInterval(countdownTimeInterval);
@@ -189,15 +189,15 @@ static void stopMicrowave() {
     currentMode = MODE_FINISHED;
     resetLcdBacklightTimeout();
 
-    setMagnetronPower(POWER_OFF);
-    setTurntableActive(false);
+    magnetronSetPower(POWER_OFF);
+    turntableSetActive(false);
 
     if (countdownTimeInterval) {
         clearInterval(countdownTimeInterval);
         countdownTimeInterval = 0;
     }
 
-    setBeep(FINISH_BEEP_LENGTH, FINISH_BEEP_TIMES);
+    beepSet(FINISH_BEEP_LENGTH, FINISH_BEEP_TIMES);
 
     lcdClearSection(false, 0, 5);
     lcdWriteStringProgMem(doneText);
@@ -295,7 +295,7 @@ static void onRunningKeypadPress(char key) {
 }
 
 static void onKeypad(char key) {
-    setBeep(ENTRY_BEEP_LENGTH, 1);
+    beepSet(ENTRY_BEEP_LENGTH, 1);
     resetLcdBacklightTimeout();
 
     if (currentDoorState == DOOR_OPENED)
@@ -341,7 +341,7 @@ static void onKeypad(char key) {
 }
 
 static void onOpenButton() {
-    setBeep(ENTRY_BEEP_LENGTH, 1);
+    beepSet(ENTRY_BEEP_LENGTH, 1);
     resetLcdBacklightTimeout();
 
     if (currentDoorState == DOOR_OPENED)
@@ -359,7 +359,7 @@ static void onOpenButton() {
 }
 
 static void onCloseButton() {
-    setBeep(ENTRY_BEEP_LENGTH, 1);
+    beepSet(ENTRY_BEEP_LENGTH, 1);
     resetLcdBacklightTimeout();
 
     if (currentDoorState == DOOR_CLOSED)
