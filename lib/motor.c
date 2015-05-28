@@ -21,7 +21,7 @@
 #define RPS_DETECTOR(reg) reg##D
 #define RPS_DETECTOR_BIT PD2
 #define RPS_DETECTOR_INT(reg, ...) reg##2##__VA_ARGS__
-#define RPS_DETECTOR_TIMER(reg, ...) reg##4##__VA_ARGS__
+#define RPS_DETECTOR_TIMER(reg, ...) reg##1##__VA_ARGS__
 #define RPS_DETECTOR_TICKS_PER_SECOND (F_CPU / 1024)
 
 #define PWM_OUTPUT(reg) reg##E
