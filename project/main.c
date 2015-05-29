@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <avr/io.h>
-#include <avr/pgmspace.h>
 
 #include "events.h"
 #include "keypad.h"
@@ -78,9 +77,6 @@ static void resetMicrowave() {
     currentMode = MODE_ENTRY;
     displayEnableDimming(true);
     displayActivate();
-
-    // Stop any beeping
-    beepStop();
 
     // Clear any unwanted existing text
     displayUpdateTime(0, 0, 0);
@@ -303,6 +299,7 @@ void setup() {
     keypadSetup();
     magnetronSetup();
     turntableSetup();
+    beepSetup();
 
     BUTTONS(DDR) &= ~((1 << BUTTON_OPEN) | (1 << BUTTON_CLOSE));
     BUTTONS(PORT) |= (1 << BUTTON_OPEN) | (1 << BUTTON_CLOSE);
