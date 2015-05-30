@@ -57,16 +57,13 @@ void beepSet(uint16_t length, uint8_t times) {
         setBeepInactiveInterval = 0;
     }
 
-    if (times == 0)
+    if (times == 0) {
+        setBeepActive(false, false);
         return;
+    }
 
     setBeepActiveInterval = setIntervalWithDelay((void (*)(uint8_t, bool))setBeepActive, true, -2 * length, 2 * length, times);
     setBeepInactiveInterval = setIntervalWithDelay((void (*)(uint8_t, bool))setBeepActive, false, -length, 2 * length, times);
-}
-
-void beepStop() {
-    beepSet(0, 0);
-    setBeepActive(false, false);
 }
 
 void beepSetup() {

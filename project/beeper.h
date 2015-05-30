@@ -5,6 +5,5 @@
 
 void beepSetup();
 void beepSet(uint16_t length, uint8_t times);
-void beepStop();
 
 #endif
