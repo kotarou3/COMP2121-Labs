@@ -67,12 +67,11 @@ void displayUpdateTime(uint8_t minutes, uint8_t seconds) {
 
     if (seconds >= 10) {
         lcdWriteUInt(seconds);
-    } else {
-        if (minutes == 0) {
-            lcdWrite(' ');
-        } else {
-            lcdWrite('0');
-        }
+    } else if (minutes != 0) {
+        lcdWrite('0');
+        lcdWriteUInt(seconds);
+    } else if (seconds != 0) {
+        lcdWrite(' ');
         lcdWriteUInt(seconds);
     }
 }
