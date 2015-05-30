@@ -8,7 +8,7 @@ void displaySetup();
 void displayActivate();
 void displayEnableDimming(bool isEnabling);
 
-void displayUpdateTime(uint8_t minutes, uint8_t seconds, uint8_t digitsToDisplay);
+void displayUpdateTime(uint8_t minutes, uint8_t seconds);
 void displayUpdateDoor(bool isOpen);
 
 void displayStatusRemoveFood();

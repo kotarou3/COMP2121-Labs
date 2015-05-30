@@ -13,13 +13,20 @@ static struct {
     uint8_t seconds;
 } currentTimer;
 
+static uint8_t inputBuffer[4];
 static uint8_t enteredDigits;
 
 void timerClear() {
     currentTimer.minutes = 0;
     currentTimer.seconds = 0;
+
+    inputBuffer[0] = 0;
+    inputBuffer[1] = 0;
+    inputBuffer[2] = 0;
+    inputBuffer[3] = 0;
     enteredDigits = 0;
-    displayUpdateTime(0, 0, 0);
+
+    displayUpdateTime(0, 0);
 }
 
 bool timerIsZero() {
@@ -32,8 +39,7 @@ void timerSetDefaultIfEmpty() {
 
     currentTimer.minutes = DEFAULT_TIME_MINUTES;
     currentTimer.seconds = DEFAULT_TIME_SECONDS;
-    enteredDigits = 4;
-    displayUpdateTime(DEFAULT_TIME_MINUTES, DEFAULT_TIME_SECONDS, 4);
+    displayUpdateTime(DEFAULT_TIME_MINUTES, DEFAULT_TIME_SECONDS);
 }
 
 void timerAddSeconds(int8_t seconds) {
@@ -68,31 +74,38 @@ void timerAddSeconds(int8_t seconds) {
         currentTimer.seconds = newSeconds;
     }
 
-    displayUpdateTime(currentTimer.minutes, currentTimer.seconds, 4);
+    displayUpdateTime(currentTimer.minutes, currentTimer.seconds);
 }
 
 void timerInput(uint8_t n) {
     if (enteredDigits >= 4)
         return;
 
-    switch (enteredDigits) {
-        case 0:
-            currentTimer.minutes = n * 10;
-            break;
+    if (n == 0 && enteredDigits == 0)
+        return;
 
+    inputBuffer[enteredDigits] = n;
+    ++enteredDigits;
+
+    switch (enteredDigits) {
         case 1:
-            currentTimer.minutes += n;
+            currentTimer.seconds = inputBuffer[0];
             break;
 
         case 2:
-            currentTimer.seconds = n * 10;
+            currentTimer.seconds = inputBuffer[0] * 10 + inputBuffer[1];
             break;
 
         case 3:
-            currentTimer.seconds += n;
+            currentTimer.minutes = inputBuffer[0];
+            currentTimer.seconds = inputBuffer[1] * 10 + inputBuffer[2];
+            break;
+
+        case 4:
+            currentTimer.minutes = inputBuffer[0] * 10 + inputBuffer[1];
+            currentTimer.seconds = inputBuffer[2] * 10 + inputBuffer[3];
             break;
     }
 
-    ++enteredDigits;
-    displayUpdateTime(currentTimer.minutes, currentTimer.seconds, enteredDigits);
+    displayUpdateTime(currentTimer.minutes, currentTimer.seconds);
 }

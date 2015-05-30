@@ -52,43 +52,28 @@ void displayEnableDimming(bool isEnabling) {
     isDimmingEnabled = isEnabling;
 }
 
-void displayUpdateTime(uint8_t minutes, uint8_t seconds, uint8_t digitsToDisplay) {
-    lcdSetCursor(false, 0);
+void displayUpdateTime(uint8_t minutes, uint8_t seconds) {
+    lcdClearSection(false, 0, 5);
 
-    if (digitsToDisplay != 0) {
-        uint16_t divmod = udivmod8(minutes, 10);
-        minutes = divmod >> 8;
-
-        lcdWrite((divmod & 0xff) + '0');
-        --digitsToDisplay;
-    } else {
+    if (minutes >= 10) {
+        lcdWriteUInt(minutes);
+    } else if (minutes != 0) {
         lcdWrite(' ');
+        lcdWriteUInt(minutes);
     }
 
-    if (digitsToDisplay != 0) {
-        lcdWrite(minutes + '0');
-        --digitsToDisplay;
-    } else {
-        lcdWrite(' ');
-    }
-
+    lcdSetCursor(false, 2);
     lcdWrite(':');
 
-    if (digitsToDisplay != 0) {
-        uint16_t divmod = udivmod8(seconds, 10);
-        seconds = divmod >> 8;
-
-        lcdWrite((divmod & 0xff) + '0');
-        --digitsToDisplay;
+    if (seconds >= 10) {
+        lcdWriteUInt(seconds);
     } else {
-        lcdWrite(' ');
-    }
-
-    if (digitsToDisplay != 0) {
-        lcdWrite(seconds + '0');
-        --digitsToDisplay;
-    } else {
-        lcdWrite(' ');
+        if (minutes == 0) {
+            lcdWrite(' ');
+        } else {
+            lcdWrite('0');
+        }
+        lcdWriteUInt(seconds);
     }
 }
 
