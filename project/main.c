@@ -121,16 +121,12 @@ static void stopMicrowave() {
 
 static void onEntryKeypadPress(char key) {
     if ('0' <= key && key <= '9') {
-        // Enter the time
         timerInput(key - '0');
     } else if (key == '*') {
-        // Start the microwave
         startMicrowave();
     } else if (key == '#') {
-        // Reset the time
         timerClear();
     } else if (key == 'A') {
-        // Enter power select mode
         currentMode = MODE_POWER_SELECT;
         displayStatusSetPower();
     }
@@ -155,13 +151,10 @@ static void onPowerSelectKeypadPress(char key) {
 
 static void onRunningKeypadPress(char key) {
     if (key == '#') {
-        // Pause the microwave
         pauseMicrowave();
     } else if (key == '*' || key == 'C') {
-        // Add 60 or 30 seconds
         timerAddSeconds(key == '*' ? 60 : 30);
     } else if (key == 'D') {
-        // Subtract 30 seconds
         timerAddSeconds(-30);
 
         if (timerIsZero())
