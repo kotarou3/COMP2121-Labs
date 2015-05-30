@@ -136,6 +136,23 @@ static void onEntryKeypadPress(char key) {
     }
 }
 
+static void onPowerSelectKeypadPress(char key) {
+    if (key == '#' || ('1' <= key && key <= '3')) {
+        if (key == '1') {
+            currentPowerSetting = POWER_MAX;
+            POWER_LEDS(PORT) = POWER_LEDS_MAX_MASK;
+        } else if (key == '2') {
+            currentPowerSetting = POWER_HALF;
+            POWER_LEDS(PORT) = POWER_LEDS_HALF_MASK;
+        } else if (key == '3') {
+            currentPowerSetting = POWER_QUARTER;
+            POWER_LEDS(PORT) = POWER_LEDS_QUARTER_MASK;
+        }
+        currentMode = MODE_ENTRY;
+        displayStatusClear(); // Remove the "set power" text
+    }
+}
+
 static void onRunningKeypadPress(char key) {
     if (key == '#') {
         // Pause the microwave
@@ -152,6 +169,18 @@ static void onRunningKeypadPress(char key) {
     }
 }
 
+static void onPausedKeypadPress(char key) {
+    if (key == '#')
+        resetMicrowave();
+    else if (key == '*')
+        startMicrowave();
+}
+
+static void onFinishedKeypadPress(char key) {
+    if (key == '#')
+        resetMicrowave();
+}
+
 static void onKeypad(char key) {
     beepSet(ENTRY_BEEP_LENGTH, 1);
     displayActivate();
@@ -165,20 +194,7 @@ static void onKeypad(char key) {
             break;
 
         case MODE_POWER_SELECT:
-            if (key == '#' || ('1' <= key && key <= '3')) {
-                if (key == '1') {
-                    currentPowerSetting = POWER_MAX;
-                    POWER_LEDS(PORT) = POWER_LEDS_MAX_MASK;
-                } else if (key == '2') {
-                    currentPowerSetting = POWER_HALF;
-                    POWER_LEDS(PORT) = POWER_LEDS_HALF_MASK;
-                } else if (key == '3') {
-                    currentPowerSetting = POWER_QUARTER;
-                    POWER_LEDS(PORT) = POWER_LEDS_QUARTER_MASK;
-                }
-                currentMode = MODE_ENTRY;
-                displayStatusClear(); // Remove the "set power" text
-            }
+            onPowerSelectKeypadPress(key);
             break;
 
         case MODE_RUNNING:
@@ -186,15 +202,11 @@ static void onKeypad(char key) {
             break;
 
         case MODE_PAUSED:
-            if (key == '#')
-                resetMicrowave();
-            else if (key == '*')
-                startMicrowave();
+            onPausedKeypadPress(key);
             break;
 
         case MODE_FINISHED:
-            if (key == '#')
-                resetMicrowave();
+            onFinishedKeypadPress(key);
             break;
     }
 }
