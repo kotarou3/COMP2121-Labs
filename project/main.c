@@ -7,16 +7,13 @@
 #include "beeper.h"
 #include "display.h"
 #include "magnetron.h"
+#include "timer.h"
 #include "turntable.h"
 
 // In milliseconds
 #define ENTRY_BEEP_LENGTH 250
 #define FINISH_BEEP_LENGTH 1000
 #define FINISH_BEEP_TIMES 3
-
-// What the time defaults to if nothing is entered
-#define DEFAULT_TIME_MINUTES 1
-#define DEFAULT_TIME_SECONDS 0
 
 #define BUTTONS(reg) reg##D
 #define BUTTON_OPEN PD1
@@ -40,12 +37,6 @@ static enum {
     MODE_FINISHED
 } currentMode;
 
-static struct {
-    uint8_t minutes;
-    uint8_t seconds;
-} currentTime;
-static uint8_t enteredDigits;
-
 static PowerSetting currentPowerSetting;
 
 static enum {
@@ -61,15 +52,9 @@ static void pauseMicrowave();
 static void stopMicrowave();
 
 static void countdownTime() {
-    if (currentTime.seconds == 0) {
-        --currentTime.minutes;
-        currentTime.seconds = 59;
-    } else {
-        --currentTime.seconds;
-    }
-    displayUpdateTime(currentTime.minutes, currentTime.seconds, 4);
+    timerAddSeconds(-1);
 
-    if (currentTime.minutes == 0 && currentTime.seconds == 0)
+    if (timerIsZero())
         stopMicrowave();
 }
 
@@ -79,16 +64,15 @@ static void resetMicrowave() {
     displayActivate();
 
     // Clear any unwanted existing text
-    displayUpdateTime(0, 0, 0);
     displayStatusClear();
-
-    currentTime.minutes = 0;
-    currentTime.seconds = 0;
-    enteredDigits = 0;
+    timerClear();
 }
 
 static void startMicrowave() {
-    if (currentTime.minutes == 0 && currentTime.seconds == 0) {
+    timerSetDefaultIfEmpty();
+    timerAddSeconds(0); // Normalise the timer
+
+    if (timerIsZero()) {
         stopMicrowave();
         return;
     }
@@ -138,45 +122,13 @@ static void stopMicrowave() {
 static void onEntryKeypadPress(char key) {
     if ('0' <= key && key <= '9') {
         // Enter the time
-        if (enteredDigits >= 4)
-            return;
-
-        switch (enteredDigits) {
-            case 0:
-                currentTime.minutes = (key - '0') * 10;
-                break;
-
-            case 1:
-                currentTime.minutes += key - '0';
-                break;
-
-            case 2:
-                currentTime.seconds = (key - '0') * 10;
-                break;
-
-            case 3:
-                currentTime.seconds += key - '0';
-                break;
-        }
-
-        ++enteredDigits;
-        displayUpdateTime(currentTime.minutes, currentTime.seconds, enteredDigits);
+        timerInput(key - '0');
     } else if (key == '*') {
         // Start the microwave
-        if (enteredDigits == 0) {
-            // No time entered, so we use the default
-            currentTime.minutes = DEFAULT_TIME_MINUTES;
-            currentTime.seconds = DEFAULT_TIME_SECONDS;
-        }
-        displayUpdateTime(currentTime.minutes, currentTime.seconds, 4);
-
         startMicrowave();
     } else if (key == '#') {
         // Reset the time
-        currentTime.minutes = 0;
-        currentTime.seconds = 0;
-        enteredDigits = 0;
-        displayUpdateTime(currentTime.minutes, currentTime.seconds, enteredDigits);
+        timerClear();
     } else if (key == 'A') {
         // Enter power select mode
         currentMode = MODE_POWER_SELECT;
@@ -190,32 +142,13 @@ static void onRunningKeypadPress(char key) {
         pauseMicrowave();
     } else if (key == '*' || key == 'C') {
         // Add 60 or 30 seconds
-        currentTime.seconds += key == '*' ? 60 : 30;
-        if (currentTime.seconds > 99) {
-            if (currentTime.minutes == 99) {
-                // We don't want to overflow, so clamp to 99:99
-                currentTime.seconds = 99;
-            } else {
-                ++currentTime.minutes;
-                currentTime.seconds -= 60;
-            }
-        }
-        displayUpdateTime(currentTime.minutes, currentTime.seconds, 4);
+        timerAddSeconds(key == '*' ? 60 : 30);
     } else if (key == 'D') {
         // Subtract 30 seconds
-        currentTime.seconds -= 30;
-        if (currentTime.seconds & 0x80) { // Did we underflow?
-            if (currentTime.minutes == 0) {
-                // Finished!
-                currentTime.seconds = 0;
-                stopMicrowave();
-                return;
-            } else {
-                --currentTime.minutes;
-                currentTime.seconds += 60;
-            }
-        }
-        displayUpdateTime(currentTime.minutes, currentTime.seconds, 4);
+        timerAddSeconds(-30);
+
+        if (timerIsZero())
+            stopMicrowave();
     }
 }
 

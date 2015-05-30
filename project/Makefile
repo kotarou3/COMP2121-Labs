@@ -11,5 +11,5 @@ all: main
 clean:
 	rm -f main *.asm *.hex
 
-main: main.c beeper.c display.c magnetron.c turntable.c $(DEPENDENCIES)
-	$(COMPILER) $(DEPENDENCIES) main.c beeper.c display.c magnetron.c turntable.c -o main
+main: main.c beeper.c display.c magnetron.c timer.c turntable.c $(DEPENDENCIES)
+	$(COMPILER) $(DEPENDENCIES) main.c beeper.c display.c magnetron.c timer.c turntable.c -o main
