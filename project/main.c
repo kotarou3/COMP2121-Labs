@@ -232,16 +232,17 @@ static void onKeypad(char key) {
             break;
 
         case MODE_POWER_SELECT:
-            if (key == '1') {
-                currentPowerSetting = POWER_MAX;
-                POWER_LEDS(PORT) = POWER_LEDS_MAX_MASK;
-            } else if (key == '2') {
-                currentPowerSetting = POWER_HALF;
-                POWER_LEDS(PORT) = POWER_LEDS_HALF_MASK;
-            } else if (key == '3') {
-                currentPowerSetting = POWER_QUARTER;
-                POWER_LEDS(PORT) = POWER_LEDS_QUARTER_MASK;
-            } else if (key == '#') {
+            if (key == '#' || ('1' <= key && key <= '3')) {
+                if (key == '1') {
+                    currentPowerSetting = POWER_MAX;
+                    POWER_LEDS(PORT) = POWER_LEDS_MAX_MASK;
+                } else if (key == '2') {
+                    currentPowerSetting = POWER_HALF;
+                    POWER_LEDS(PORT) = POWER_LEDS_HALF_MASK;
+                } else if (key == '3') {
+                    currentPowerSetting = POWER_QUARTER;
+                    POWER_LEDS(PORT) = POWER_LEDS_QUARTER_MASK;
+                }
                 currentMode = MODE_ENTRY;
                 displayStatusClear(); // Remove the "set power" text
             }
