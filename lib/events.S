@@ -421,8 +421,8 @@ debounceEnd:
     mov ZL, r24
     lsl ZL
     clr ZH
-    subi ZL, lo8(-(debounceEnd_switch_jumptable - INT0_vect_num * 2))
-    sbci ZH, hi8(-(debounceEnd_switch_jumptable - INT0_vect_num * 2))
+    subi ZL, lo8(-(debounceEnd_switch_jumptable - (INT0_vect_num << 1)))
+    sbci ZH, hi8(-(debounceEnd_switch_jumptable - (INT0_vect_num << 1)))
     lpm r0, Z+
     lpm ZH, Z
     mov ZL, r0
