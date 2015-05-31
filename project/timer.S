@@ -68,6 +68,10 @@ timerSetDefaultIfEmpty:
     skipIf z
     ret
 
+    // enteredDigits = 4;
+    ldi r24, 4
+    sts enteredDigits, r24
+
     // currentTimer.minutes = DEFAULT_TIME_MINUTES;
     // currentTimer.seconds = DEFAULT_TIME_SECONDS;
     // displayUpdateTime(DEFAULT_TIME_MINUTES, DEFAULT_TIME_SECONDS);

@@ -39,6 +39,7 @@ void timerSetDefaultIfEmpty() {
 
     currentTimer.minutes = DEFAULT_TIME_MINUTES;
     currentTimer.seconds = DEFAULT_TIME_SECONDS;
+    enteredDigits = 4;
     displayUpdateTime(DEFAULT_TIME_MINUTES, DEFAULT_TIME_SECONDS);
 }
 
