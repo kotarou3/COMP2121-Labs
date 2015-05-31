@@ -103,17 +103,8 @@ static void pauseMicrowave() {
 }
 
 static void stopMicrowave() {
+    pauseMicrowave();
     currentMode = MODE_FINISHED;
-    displayEnableDimming(true);
-    displayActivate();
-
-    magnetronSetPower(POWER_OFF);
-    turntableSetActive(false);
-
-    if (countdownTimeInterval) {
-        clearInterval(countdownTimeInterval);
-        countdownTimeInterval = 0;
-    }
 
     displayStatusRemoveFood();
     beepSet(FINISH_BEEP_LENGTH, FINISH_BEEP_TIMES);
