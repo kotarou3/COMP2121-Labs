@@ -183,16 +183,28 @@
             var l = variableLines[v];
 
             var startL = l - 1;
-            for (; startL >= 0 && lines[startL] && lines[startL].comment; --startL)
-                ;
+            for (; startL >= 0 && lines[startL]; --startL) {
+                if (lines[startL].comment)
+                    continue;
+                if (lines[startL].preprocessor && lines[startL].preprocessor.slice(0, 8) === "#define ")
+                    continue;
+                break;
+            }
             ++startL;
 
             var endL = l + 1;
             for (; endL < lines.length && (!lines[endL] || lines[endL].comment || lines[endL].variable); ++endL)
                 if (!lines[endL]) {
                     var nextEndL = endL + 1;
-                    for (; nextEndL < lines.length && (!lines[nextEndL] || lines[nextEndL].comment); ++nextEndL)
-                        ;
+                    for (; nextEndL < lines.length; ++nextEndL) {
+                        if (!lines[nextEndL])
+                            continue;
+                        if (lines[nextEndL].comment)
+                            continue;
+                        if (lines[nextEndL].preprocessor && lines[nextEndL].preprocessor.slice(0, 8) === "#define ")
+                            continue;
+                        break;
+                    }
                     if (nextEndL >= lines.length || !lines[nextEndL].variable)
                         break;
 
