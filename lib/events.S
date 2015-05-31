@@ -80,7 +80,6 @@ intHandler USART3_TX_vect_num
 
 #endif
 
-    .section .text
 _start:
     cli
 
@@ -113,6 +112,8 @@ _emitInterrupt:
     eicall
 
     reti
+
+    .section .text
 
 #ifndef ALL_ASSEMBLY
 
