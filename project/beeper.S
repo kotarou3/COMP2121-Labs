@@ -221,7 +221,7 @@ beepSetup:
     sts _SFR_MEM_ADDR(BEEP_PWM_TIMER_S(TCCR, A)), r24
 
     // BEEP_PWM_TIMER(TCCR, B) = (1 << BEEP_PWM_TIMER(WGM, 3)) | (1 << BEEP_PWM_TIMER(WGM, 2)) | (1 << BEEP_PWM_TIMER(CS, 0));
-    ldi r24, (1 << BEEP_PWM_TIMER_S(WGM, 3)) | (1 << BEEP_PWM_TIMER_S(WGM, 2)) | (1 << BEEP_PWM_TIMER_S(CS, 0));
+    ldi r24, (1 << BEEP_PWM_TIMER_S(WGM, 3)) | (1 << BEEP_PWM_TIMER_S(WGM, 2)) | (1 << BEEP_PWM_TIMER_S(CS, 0))
     sts _SFR_MEM_ADDR(BEEP_PWM_TIMER_S(TCCR, B)), r24
 
     // BEEP_PWM_TIMER(OCR, A) = BEEP_PWM_PERIOD; // TOP

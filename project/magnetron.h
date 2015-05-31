@@ -19,6 +19,7 @@ void magnetronSetPower(PowerSetting power);
 #define POWER_HALF (POWER_MAX + 1)
 #define POWER_QUARTER (POWER_HALF + 1)
 #define POWER_OFF (POWER_QUARTER + 1)
+#define sizeof_PowerSetting 1
 
 #endif
 
