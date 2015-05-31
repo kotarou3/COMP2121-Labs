@@ -64,8 +64,7 @@ timerSetDefaultIfEmpty:
     // if (enteredDigits != 0)
     //     return;
     lds r24, enteredDigits
-    tst r24
-    skipIf z
+    cpse r24, r1
     ret
 
     // enteredDigits = 4;

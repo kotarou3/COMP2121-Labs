@@ -235,10 +235,9 @@ displayUpdateDoor:
     call lcdSetCursor
 
     // lcdWrite(isOpen ? 'O' : 'C');
-    ldi r24, 'O'
-    tst r16
-    skipIf nz
     ldi r24, 'C'
+    cpse r16, r1
+    ldi r24, 'O'
     pop r16
     jmp lcdWrite
 

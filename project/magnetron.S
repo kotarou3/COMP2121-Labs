@@ -14,8 +14,7 @@
 setMagnetronActive:
 
     // motorSetRps(isActive ? MAGNETRON_RPS : 0);
-    tst r24
-    skipIf z
+    cpse r24, r1
     ldi r24, MAGNETRON_RPS
     jmp motorSetRps
 // }

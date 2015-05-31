@@ -48,10 +48,9 @@ readRaw:
 
     // LCD_CONTROL(PORT) = (1 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E) | (!isControl << LCD_CONTROL_RS);
     // microsecondBusyWait();
-    ldi r23, (1 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E)
-    tst r24
-    skipIf nz
-    ori r23, 1 << LCD_CONTROL_RS
+    ldi r23, (1 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E) | (1 << LCD_CONTROL_RS)
+    cpse r24, r1
+    ldi r23, (1 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E) | (0 << LCD_CONTROL_RS)
     out _SFR_IO_ADDR(LCD_CONTROL(PORT)), r23
     microsecondBusyWait r22
 
@@ -100,10 +99,9 @@ writeRaw_skippedBusyCheck:
 
     // LCD_CONTROL(PORT) = (0 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E) | (!isInstruction << LCD_CONTROL_RS);
     // microsecondBusyWait();
-    ldi r23, (0 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E)
-    tst r16
-    skipIf nz
-    ori r23, 1 << LCD_CONTROL_RS
+    ldi r23, (0 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E) | (1 << LCD_CONTROL_RS)
+    cpse r16, r1
+    ldi r23, (0 << LCD_CONTROL_RW) | (0 << LCD_CONTROL_E) | (0 << LCD_CONTROL_RS)
     out _SFR_IO_ADDR(LCD_CONTROL(PORT)), r23
     microsecondBusyWait r22
 
