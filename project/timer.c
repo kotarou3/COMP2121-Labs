@@ -55,25 +55,22 @@ void timerAddSeconds(int8_t seconds) {
     if (newSeconds >= 60) {
         if (currentTimer.minutes == 99) {
             if (newSeconds > 99) {
-                currentTimer.seconds = 99;
-            } else {
-                currentTimer.seconds = newSeconds;
+                newSeconds = 99;
             }
         } else {
-            currentTimer.seconds = newSeconds - 60;
+            newSeconds -= 60;
             ++currentTimer.minutes;
         }
     } else if (newSeconds < 0) {
         if (currentTimer.minutes == 0) {
-            currentTimer.seconds = 0;
+            newSeconds = 0;
         } else {
-            currentTimer.seconds = newSeconds + 60;
+            newSeconds += 60;
             --currentTimer.minutes;
         }
-    } else {
-        currentTimer.seconds = newSeconds;
     }
 
+    currentTimer.seconds = newSeconds;
     displayUpdateTime(currentTimer.minutes, currentTimer.seconds);
 }
 
