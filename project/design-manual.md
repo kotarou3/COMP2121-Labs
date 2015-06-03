@@ -1,7 +1,7 @@
 # Microwave Emulator Design Manual
 
 ## Overview
-The code is seperated into two sections:
+The code is separated into two sections:
  - **Library** code are highly reusable components designed to be easily included in any project.
  - **Project** code are the more specific components designed to be used for the project only.
 
@@ -236,12 +236,12 @@ Performs all the actions required upon a mode change, such as pausing the magnet
     static void onPausedKeypadPress(char key);
     static void onFinishedKeypadPress(char key);
 Functions that are called upon a key press on the keypad.<br />
-Entry first enters in `onKeypad()`, where it will dispatch the keypress to the appropiate `on*KeypadPress()` function depending on the current microwave mode.<br />
-The `on*KeypadPress()` functions will perform the appropiate actions depending on which key was pressed.
+Entry first enters in `onKeypad()`, where it will dispatch the key press to the appropriate `on*KeypadPress()` function depending on the current microwave mode.<br />
+The `on*KeypadPress()` functions will perform the appropriate actions depending on which key was pressed.
 
     static void onOpenButton();
     static void onCloseButton();
-Functions that are called upon a button press, and performs the appropiate actions.
+Functions that are called upon a button press, and performs the appropriate actions.
 
 ### `project/beeper`
 Controls the speaker for the purpose of outputting beeps.<br />
@@ -276,7 +276,7 @@ Disables/enables dimming of the backlight.<br />
  - `uint8_t minutes/seconds`: Minutes and seconds values to display
 
 Displays `minutes` and `seconds` as a time value. That is, mm:ss.<br />
-Leading zeros are not displayed. This means that if both `minutes` and `seconds` are zero, only a single seperating colon (`:`) will be displayed.
+Leading zeros are not displayed. This means that if both `minutes` and `seconds` are zero, only a single separating colon (`:`) will be displayed.
 
     void displayUpdateDoor(bool isOpen);
  - `bool isOpen`: Specifies if the door is opened or not
@@ -377,7 +377,7 @@ When a hole passes the detector (on the disk attached to the motor), a hardware 
 The speaker receives a PWM signal from `project/beeper` and changes its displacement accordingly.
 
 ### `lib/events`
-Calls the callbacks registered by `lib/motor`, `project/main`, `project/magnetron` and `project/turntable` through the `setTimeout()` and `setInterval()` set of functions with the appropiate delays.<br />
+Calls the callbacks registered by `lib/motor`, `project/main`, `project/magnetron` and `project/turntable` through the `setTimeout()` and `setInterval()` set of functions with the appropriate delays.<br />
 See the respective module's descriptions for more detailed information.
 
 ### `lib/keypad`
@@ -420,7 +420,7 @@ Actual magnetron on and off commands are sent to `lib/motor` as RPS settings of 
 ### `project/turntable`
 Receives commands from `project/main` specifying whether the turntable should be turning or not, and if the direction needs to be reversed.
 
-Implemented by having `lib/events` call `rotateTurntable()` once per 2.5 seconds, which then updates the LCD with the appropiate character through `lib/lcd`.
+Implemented by having `lib/events` call `rotateTurntable()` once per 2.5 seconds, which then updates the LCD with the appropriate character through `lib/lcd`.
 
 ### `project/timer`
 Receives commands from `project/main` specifying how the timer should be updated, processes them, and then passes the current timer to `project/display` to be displayed.<br />
@@ -556,12 +556,12 @@ It is modified to take advantages of bit shifts and rotates rather using individ
 Describing exactly how this algorithm works is outside the scope of this manual, but as an overview, it shifts the divisor one bit at a time from left to right under the dividend, and if the dividend is greater than the shifted divisor, it is subtracted by the shifted divisor and the corresponding bit in the quotient is set.
 
 ### `lib/events`
-Two "algorithms" are used in this module: One for trasversing the timer callbacks linked list and calling its callbacks, and one for debouncing hardware interrupts.
+Two "algorithms" are used in this module: One for traversing the timer callbacks linked list and calling its callbacks, and one for debouncing hardware interrupts.
 
-#### Trasversing Timer Callbacks
-The `onTick()` function is called every 8 ms, updates the system clock, and trasverses the timer callbacks linked list as follows:
+#### Traversing Timer Callbacks
+The `onTick()` function is called every 8 ms, updates the system clock, and traverses the timer callbacks linked list as follows:
  1. Load the pointer to the first `IntervalCallback` node into `buffer`
- 2. If `buffer` is `0`, finish trasversal
+ 2. If `buffer` is `0`, finish traversal
  3. Check if the current system clock has passed the value in `buffer->when`
  4. If not, continue execution from (9)<br />
     If so, continue
@@ -573,7 +573,7 @@ The `onTick()` function is called every 8 ms, updates the system clock, and tras
  9. Load `buffer->next` into `buffer`
  10. Repeat from (2)
 
-Callback buffers are checked and cleared if neccessary before the callback is called is the result of legacy code, where the callback buffer allocator would fail if more timer callbacks were added in the callback if this was not done.<br />
+Callback buffers are checked and cleared if necessary before the callback is called is the result of legacy code, where the callback buffer allocator would fail if more timer callbacks were added in the callback if this was not done.<br />
 The bad callback buffer allocated has now been replaced with a better one, but this code has not been updated.
 
 ### Debouncing Hardware Interrupts
