@@ -1,0 +1,57 @@
+digraph {
+    //bgcolor = "transparent"
+    node [style = "filled"]
+
+    subgraph {
+        node [fillcolor = "orange"]
+
+        "lib/events"
+        "lib/motor"
+        "lib/lcd"
+        "lib/circular-buffer"
+        "lib/keypad"
+        "lib/divmod"
+    }
+    subgraph {
+        node [fillcolor = "deepskyblue"]
+
+        "project/magnetron"
+        "project/main"
+        "project/beeper"
+        "project/turntable"
+        "project/timer"
+        "project/display"
+    }
+
+    subgraph {
+        "lib/motor" -> "lib/circular-buffer"
+        "lib/motor" -> "lib/divmod"
+        "lib/motor" -> "lib/events"
+        "lib/lcd" -> "lib/divmod"
+        "lib/lcd" -> "lib/events"
+        "lib/keypad" -> "lib/events"
+
+        "project/magnetron" -> "lib/events"
+        "project/magnetron" -> "lib/motor"
+        "project/main" -> "lib/events"
+        "project/main" -> "lib/keypad"
+        "project/beeper" -> "lib/events"
+        "project/turntable" -> "lib/events"
+        "project/turntable" -> "lib/lcd"
+        "project/timer" -> "lib/events"
+        "project/display" -> "lib/divmod"
+        "project/display" -> "lib/events"
+        "project/display" -> "lib/lcd"
+    }
+    subgraph {
+        edge [color = "deepskyblue"]
+
+        "lib/events" -> "project/main"
+        "project/main" -> "project/beeper"
+        "project/main" -> "project/display"
+        "project/main" -> "project/magnetron"
+        "project/main" -> "project/timer"
+        "project/main" -> "project/turntable"
+        "project/timer" -> "project/display"
+    }
+}

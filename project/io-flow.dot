@@ -1,0 +1,60 @@
+digraph {
+    //bgcolor = "transparent"
+    node [style = "filled"]
+
+    subgraph {
+        node [fillcolor = "orange"]
+
+        "lib/events"
+        "lib/motor"
+        "lib/lcd"
+        "lib/keypad"
+    }
+    subgraph {
+        node [fillcolor = "deepskyblue"]
+
+        "project/magnetron"
+        "project/main"
+        "project/beeper"
+        "project/turntable"
+        "project/timer"
+        "project/display"
+    }
+
+    subgraph timer {
+        edge [color = "red"]
+
+        "lib/events" -> "lib/motor"
+        "lib/events" -> "project/main"
+        "lib/events" -> "project/magnetron"
+        "lib/events" -> "project/turntable"
+        "project/beeper" -> "project/beeper"
+    }
+    subgraph interrupt {
+        edge [color = "blue"]
+
+        "hardware/keypad" -> "lib/keypad"
+        "hardware/optical-detector" -> "lib/motor"
+        "hardware/buttons" -> "project/main"
+    }
+    subgraph commands {
+        edge [color = "green"]
+
+        "lib/keypad" -> "project/main"
+        "lib/lcd" -> "hardware/lcd"
+        "lib/motor" -> "hardware/motor"
+
+        "project/main" -> "project/beeper"
+        "project/main" -> "project/display"
+        "project/main" -> "project/magnetron"
+        "project/main" -> "project/turntable"
+        "project/main" -> "project/timer"
+        "project/main" -> "hardware/leds"
+        "project/beeper" -> "hardware/speaker"
+        "project/display" -> "lib/lcd"
+        "project/magnetron" -> "lib/motor"
+        "project/timer" -> "project/main"
+        "project/timer" -> "project/display"
+        "project/turntable" -> "lib/lcd"
+    }
+}
