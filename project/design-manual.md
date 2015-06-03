@@ -545,3 +545,96 @@ The current turntable position in gradians, with `TURNTABLE_LOOP` signifying tha
         TURNTABLE_CLOCKWISE
     } currentTurntableDirection;
 The direction to spin the turntable.
+
+## Algorithms
+Only the "algorithms" that aren't simple case bashing or timer actions will be described.
+
+### `lib/divmod`
+The division algorithm used is binary long division, described by the [wikipedia article](http://en.wikipedia.org/wiki/Division_algorithm#Integer_division_.28unsigned.29_with_remainder).<br />
+It is modified to take advantages of bit shifts and rotates rather using individual bit accesses.
+
+Describing exactly how this algorithm works is outside the scope of this manual, but as an overview, it shifts the divisor one bit at a time from left to right under the dividend, and if the dividend is greater than the shifted divisor, it is subtracted by the shifted divisor and the corresponding bit in the quotient is set.
+
+### `lib/events`
+Two "algorithms" are used in this module: One for trasversing the timer callbacks linked list and calling its callbacks, and one for debouncing hardware interrupts.
+
+#### Trasversing Timer Callbacks
+The `onTick()` function is called every 8 ms, updates the system clock, and trasverses the timer callbacks linked list as follows:
+ 1. Load the pointer to the first `IntervalCallback` node into `buffer`
+ 2. If `buffer` is `0`, finish trasversal
+ 3. Check if the current system clock has passed the value in `buffer->when`
+ 4. If not, continue execution from (9)<br />
+    If so, continue
+ 5. Save `buffer->callback`, `buffer->arg` and `buffer->times == 1` to local variables
+ 6. Increment `buffer->when` by `buffer->ticks`
+ 7. If `buffer->times` is 1, save `buffer->prev` to a temporary variable, deallocate the buffer, and set `buffer` to the temporary variable<br />
+    Otherwise if `buffer->times` is not 0, decrement it
+ 8. Call the callback using the saved values from (5), as if it were `buffer->callback(buffer->arg, buffer->times == 1)`
+ 9. Load `buffer->next` into `buffer`
+ 10. Repeat from (2)
+
+Callback buffers are checked and cleared if neccessary before the callback is called is the result of legacy code, where the callback buffer allocator would fail if more timer callbacks were added in the callback if this was not done.<br />
+The bad callback buffer allocated has now been replaced with a better one, but this code has not been updated.
+
+### Debouncing Hardware Interrupts
+Hardware interrupts are debounced as follows:
+ 1. When a hardware interrupt is received, set a `debounceEnd()` to be called with a timeout of 30 ms
+ 2. If another hardware interrupt is received when the above timeout is still pending (i.e., 30 ms has not passed), reset it to 30 ms again
+ 3. When `debounceEnd()` is finally called, check if the input pin is still low. If it isn't, end execution
+ 4. Call the callback
+
+Step (2) debounces any bouncy button pressing, while (3) is for preventing the callback being called again upon bouncy button releasing.
+
+### `lib/lcd`
+Only one "algorithm" is used in this module, and it is used for converting a number into a base-10 string to be displayed:
+ 1. Allocate a bottom-up stack of 6 bytes (Maximum 5 digits for 16 bits + terminating null)
+ 2. Push an initial null byte
+ 3. While the quotient is greater or equal to 10, divide it by 10 and push the remainder as an ASCII digit onto the stack
+ 4. Push the final quotient (which is now less than 10) as an ASCII digit onto the stack
+ 5. The pointer to the top of the stack is now a C string representing the base-10 value of the number
+
+### `lib/motor`
+Both binary and semi-linear search is combined to be used in finding the correct duty cycle for a target RPS value, and adjusting it dynamically if the load changes. It can be described as follows:
+ - Upon a target RPS change:
+    1. If the RPS change is greater than 50, take a linear estimate for the new correct duty cycle and set the current duty cycle to it
+    2. Reset `topDutyCycle` and `bottomDutyCycle` to equal the current duty cycle.
+ - `stepInterval` starts with an initial value of 1%
+ - The following cases are checked every 250 ms:
+    - If the current RPS is equal to the target RPS, do nothing
+    - If the current RPS is less than the target RPS
+       - If `topDutyCycle` is equal to the current duty cycle
+          1. Set `bottomDutyCycle` to the current duty cycle
+          2. Increment `topDutyCycle` by `stepInterval` but clamp it to a maximum of 100%
+          3. Double `stepInterval` but clamp it to a maximum of 10%
+          4. Set the current duty cycle to `topDutyCycle`
+       - Otherwise
+          1. Set `stepInterval` to 1%
+          2. Perform a binary search between `topDutyCycle` and `bottomDutyCycle`
+    - Otherwise
+       - If `bottomDutyCycle` is equal to the current duty cycle
+          1. Set `topDutyCycle` to the current duty cycle
+          2. Decrement `bottomDutyCycle` by `stepInterval` but clamp it to a minimum of 0%
+          3. Double `stepInterval` but clamp it to a maximum of 10%
+          4. Set the current duty cycle to `bottomDutyCycle`
+       - Otherwise
+          1. Set `stepInterval` to 1%
+          2. Perform a binary search between `topDutyCycle` and `bottomDutyCycle`
+
+The above algorithm allows the current duty cycle to quickly converge to the correct duty cycle, while avoiding large jumps in speed when the target RPS is only changed by a small amount.
+
+### `project/timer`
+The "algorithm" used here is simply slightly more complex case bashing for normalising and clamping the timer value when doing timer arithmetic:
+ 1. Calculate the new seconds place as a signed integer
+ 2. Check if the seconds to be added is positive and if the new seconds is negative
+    - If so, it means the new seconds overflowed, so set it to 99
+ 3. Perform the following case checks:
+    - `newSeconds >= 60 && currentTimer.minutes == 99 && newSeconds > 99`
+       - Seconds overflowed, but minutes place is already 99, so set the new seconds to 99 (Clamping maximum timer value to 99:99)
+    - `newSeconds >= 60 && currentTimer.minutes != 99`
+       - Seconds overflowed, and minutes place is not 99, so subtract 60 from the seconds and increment the minutes place (Normalising the timer for addition)
+    - `newSeconds < 0 && currentTimer.minutes == 0`
+       - Seconds underflowed, but minutes place is already 0, so set the new seconds too 0 (Clamping minimum timer value to 00:00)
+    - `newSeconds < 0 && currentTimer.minutes != 0`
+       - Seconds underflowed, and minutes place is not 0, so add 60 to the seconds and decrement the minutes place (Normalising the timer for subtraction)
+
+The above algorithm will clamp the timer value to `[00:00, 99:99]`, and also normalise it so that the seconds place is never >=60 except when minutes is 99.
