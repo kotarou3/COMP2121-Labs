@@ -307,6 +307,7 @@ Sets up the turntable.
     void turntableSetActive(bool isActive);
  - `bool isActive`: Specifies if the turntable should be rotating or not
 
+
     void turntableReverseDirection();
 Reverses the direction of the turntable rotation.
 
@@ -319,6 +320,7 @@ Clears the timer to 0 (blank) and any saved input.
 
     bool timerIsZero();
  - Returns `bool` representing if the timer is 0 or not
+
 
     void timerSetDefaultIfEmpty();
 Sets the timer to the default value of `1:00` if no input has been detected for the timer.
