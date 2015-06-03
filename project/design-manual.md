@@ -425,3 +425,123 @@ Implemented by having `lib/events` call `rotateTurntable()` once per 2.5 seconds
 ### `project/timer`
 Receives commands from `project/main` specifying how the timer should be updated, processes them, and then passes the current timer to `project/display` to be displayed.<br />
 Also returns whether the timer is zero or not back to `project/main`.
+
+## Data Structures
+While the majority of the source files have some kind of data structure to them, most of them are merely timeout/interval variables, and are not very important to understanding how data is stored. Thus, they will be ignored for the purposes of this section.
+
+### `lib/events`
+Uses two main structures, `IntervalCallback` and `DebounceCallback`, along a few other state variables.
+
+    typedef struct _IntervalCallback {
+        uint8_t arg;
+        uint16_t ticks;
+        uint16_t times;
+
+        uint32_t when;
+        struct _IntervalCallback* prev;
+        struct _IntervalCallback* next;
+        void (*callback)(uint8_t, bool); // = 0 for unallocated
+    } IntervalCallback;
+    static IntervalCallback callbacksBuffer[MAX_CALLBACKS];
+    static IntervalCallback* callbacks;
+Each `IntervalCallback` instance represents a node in a doubly linked list. They are all stored within `callbacksBuffer`, with the first node pointed to by `callbacks`.<br />
+This structure stores the information needed to call the system timer callbacks:
+ - `uint8_t arg`: The argument to pass to the callback
+ - `uint16_t ticks`: The number of system timer ticks between each call
+ - `uint16_t times`: The number of times to call the callback. Decremented after each call unless it is `0`, where the callback will be called indefinitely
+ - `uint32_t when`: The system tick counter that must be passed to call this callback. Incremented by `ticks` every callback call
+ - `struct _IntervalCallback* prev/next`: Pointers to the previous/next nodes in the linked list. `0` if there is no more nodes in that direction
+ - `void (*callback)(uint8_t, bool)`: The callback to call. `0` when the node is unallocated (used in the code for allocating a `IntervalCallback` from `callbacksBuffer`)
+
+
+    typedef struct _DebounceCallback {
+        void* timeout;
+        void (*callback)(uint8_t);
+    } DebounceCallback;
+    static DebounceCallback debounceCallbacks[PCINT2_vect_num - INT0_vect_num + 1];
+Simple structure holding the callback to call (`callback`) and the timeout used for debouncing an interrupt (`timeout`). `debounceCallbacks` contains a slot for one `DebounceCallback` per hardware interrupt.
+
+Other state variables include:
+ - `static uint32_t ticks`: The system tick counter. Gets incremented by one every 8 ms
+ - `static void (*interrupts[_VECTORS_SIZE >> 2])(uint8_t)`: Callbacks for all the interrupts. One is available per interrupt
+
+### `lib/circular-buffer`
+
+    typedef struct _CircularBuffer {
+        bool isOverwriteAllowed;
+        bool isFull;
+        uint8_t* dataStart;
+        uint8_t* dataEnd;
+        uint8_t* bufferStart;
+        uint8_t* bufferEnd;
+    } CircularBuffer;
+ - `bool isOverwriteAllowed`: Whether old data overwriting is allowed or not in this circular buffer
+ - `bool isFull`: Whether the buffer is full or not. Used to differentiate between the two `dataStart == dataEnd` states, one where the buffer is empty and one when full
+ - `uint8_t* dataStart/dataEnd`: Pointers to the current start and end of the buffer. Wraps around at `bufferEnd` to `bufferStart`
+ - `uint8_t* bufferStart/bufferEnd`: Pointers to the backing storage used for this buffer
+
+### `lib/motor`
+ - `static CircularBuffer rpsBuffer`: The circular buffer used to store the past four RPS values
+ - `static uint8_t rpsRawBuffer[RPS_SAMPLE_SIZE]`: The backing storage used for the above circular buffer
+ - `static uint8_t targetRps`: The target RPS the code attempts to reach
+ - `static uint16_t topDutyCycle/bottomDutyCycle`: The top and button duty cycles used in the binary search to find the correct duty cycle
+
+### `project/main`
+Three `enum`s are used to represent microwave state.
+
+    static enum {
+        MODE_ENTRY,
+        MODE_POWER_SELECT,
+        MODE_RUNNING,
+        MODE_PAUSED,
+        MODE_FINISHED
+    } currentMode;
+Current microwave mode. Modifies how inputs are interpreted.
+
+    static enum {
+        DOOR_CLOSED,
+        DOOR_OPENED
+    } currentDoorState;
+Current door state. All input is ignored if it is `DOOR_OPENED`.
+
+    typedef enum _PowerSetting {
+        POWER_MAX,
+        POWER_HALF,
+        POWER_QUARTER,
+        POWER_OFF
+    } PowerSetting;
+    static PowerSetting currentPowerSetting;
+The currently configured magnetron power level.
+
+### `project/display`
+ - `static bool isDimmingEnabled`: Configures whether `displayActivate()` will set a new backlight dim timeout
+
+### `project/timer`
+
+    static struct {
+        uint8_t minutes;
+        uint8_t seconds;
+    } currentTimer;
+The current timer value in minutes and seconds.
+
+    static uint8_t inputBuffer[4];
+    static uint8_t enteredDigits;
+The digits inputted to the timer.
+
+### `project/turntable`
+Two `enum`s are used to represent the turntable state.
+
+    static enum {
+        TURNTABLE_ZERO,
+        TURNTABLE_FIFTY,
+        TURNTABLE_ONE_HUNDRED,
+        TURNTABLE_ONE_HUNDRED_AND_FIFTY,
+        TURNTABLE_LOOP
+    } currentTurntablePosition;
+The current turntable position in gradians, with `TURNTABLE_LOOP` signifying that it should be looped back to `TURNTABLE_ZERO`.
+
+    static enum {
+        TURNTABLE_ANTICLOCKWISE,
+        TURNTABLE_CLOCKWISE
+    } currentTurntableDirection;
+The direction to spin the turntable.
