@@ -18,7 +18,8 @@ Please refer to the above dependency graph.<br />
 Blue nodes are project code, while orange nodes are library code.<br />
 Blue edges are dependencies on project code, while black edges are dependencies on libraries.
 
-Each module description will be given in a C API-style description.
+Each module description will be given in a C API-style description.<br />
+Only the main functions in each module will be described.
 
 ### `lib/events`
 This module is the entry point of the program, as well as any interrupts.<br />
@@ -28,17 +29,17 @@ This module controls the main event loop, which is a timer triggered to interrup
 
 This module also provides `onInterrupt` and `onDebouncedInterrupt` to register interrupt callbacks from anywhere in the codebase. This allows modules to bind their own interrupts without having to directly edit the interrupt vector table.
 
-    void _start();
+    static void _start();
 
 Internal entry point of the program.<br />
 It does some low-level housekeeping (e.g., setting up the stack) before jumping to `start()`
 
-    void _emitInterrupt(uint8_t vectorNumber);
+    static void _emitInterrupt(uint8_t vectorNumber);
 
 Interrupts will load their vector number into the first argument and immediately jump to this internal function.<br />
 The function will immediately look up the bound callback to the interrupt and call it as a normal function.
 
-    void start();
+    static void start();
 
 Called by the internal entry point of the program.<br />
 The function will perform some housekeeping (e.g., clear all RAM to 0) and then set up the main event loop timer. It then calls `setup()` before enabling interrupts and entering an infinite sleep loop.
@@ -213,3 +214,124 @@ Uses functions from `lib/circular-buffer` to store and average the detected RPSe
 Configure the code to attempt to match the real motor speed to `rps` through PWM.
 
 ### `project/main`
+Main code for the microwave, mapping inputs to do things as well as controlling the microwave's state.<br />
+Usually calls the other `project/*` modules to output actions to hardware.
+
+    void setup();
+Called from `lib/events` to set up the main code.<br />
+Sets up all the hardware components in each of the `project/*` modules, IO pins for the LEDs and buttons, and interrupts for the buttons.<br />
+Registers `onKeypad()` as the keypad press callback, and `on*Button()` for the buttons, before calling `resetMicrowave()`.
+
+    static void resetMicrowave();
+    static void startMicrowave();
+    static void pauseMicrowave();
+    static void stopMicrowave();
+Functions that are called to change between the four main microwave modes.<br />
+Performs all the actions required upon a mode change, such as pausing the magnetron when entering pause mode.
+
+    static void onKeypad(char key);
+    static void onEntryKeypadPress(char key);
+    static void onPowerSelectKeypadPress(char key);
+    static void onRunningKeypadPress(char key);
+    static void onPausedKeypadPress(char key);
+    static void onFinishedKeypadPress(char key);
+Functions that are called upon a key press on the keypad.<br />
+Entry first enters in `onKeypad()`, where it will dispatch the keypress to the appropiate `on*KeypadPress()` function depending on the current microwave mode.<br />
+The `on*KeypadPress()` functions will perform the appropiate actions depending on which key was pressed.
+
+    static void onOpenButton();
+    static void onCloseButton();
+Functions that are called upon a button press, and performs the appropiate actions.
+
+### `project/beeper`
+Controls the speaker for the purpose of outputting beeps.<br />
+The beep is a 3125 Hz sine wave.
+
+    void beepSetup();
+Initialises the IO pin and PWM for outputting to the speaker.
+
+    void beepSet(uint16_t length, uint8_t times);
+ - `uint16_t length`: Length of time for each beep and silence, in milliseconds
+ - `uint8_t times`: Number of times to beep. Set to `0` to clear any existing beep
+
+Set the beeper to output `times` beeps of length `length` milliseconds, with each pause in between also of `length` milliseconds.<br />
+If a new beep is set before the old one has finished, it ends the old beep immediately.
+
+### `project/display`
+Controls the LCD and backlight for the purposes of displaying the timer and other status text.
+
+    void displaySetup();
+Sets up the LCD, and PWM for the backlight.
+
+    void displayActivate();
+Lights up the backlight and restarts the timer for dimming, if dimming is enabled.
+
+    void displayEnableDimming(bool isEnabling);
+ - `bool isEnabling`: Specifies if the backlight should be allowed to dim or not.
+
+Disables/enables dimming of the backlight.<br />
+`displayActivate()` must be called for the changes to take effect.
+
+    void displayUpdateTime(uint8_t minutes, uint8_t seconds);
+ - `uint8_t minutes/seconds`: Minutes and seconds values to display
+
+Displays `minutes` and `seconds` as a time value. That is, mm:ss.<br />
+Leading zeros are not displayed. This means that if both `minutes` and `seconds` are zero, only a single seperating colon (`:`) will be displayed.
+
+    void displayUpdateDoor(bool isOpen);
+ - `bool isOpen`: Specifies if the door is opened or not
+
+Updates the display with the door status.
+
+    void displayStatusRemoveFood();
+    void displayStatusSetPower();
+    void displayStatusClear();
+These functions updates or clears the status messages. That is, "Done; Remove food" and "Set Power 1/2/3".
+
+### `project/magnetron`
+Controls the motor to function as a magnetron.
+
+    void magnetronSetup();
+Sets up the magnetron.
+
+    void magnetronSetPower(PowerSetting power);
+ - `PowerSetting power`: Specifies the power level for the magnetron to output. Possible values are: `POWER_MAX`, `POWER_HALF`, `POWER_QUARTER`, `POWER_OFF`
+
+### `project/turntable`
+Controls a single character on the LCD to function as a turntable.<br />
+A custom glyph is used for the backslash (`\`) because the LCD does not have it by default.
+
+    void turntableSetup();
+Sets up the turntable.
+
+    void turntableSetActive(bool isActive);
+ - `bool isActive`: Specifies if the turntable should be rotating or not
+
+    void turntableReverseDirection();
+Reverses the direction of the turntable rotation.
+
+### `project/timer`
+Controls the display, input and arithmetic on the timer. Actual counting down is controlled by `project/main`.<br />
+Automatically updates the timer display whenever the timer mutates.
+
+    void timerClear();
+Clears the timer to 0 (blank) and any saved input.
+
+    bool timerIsZero();
+ - Returns `bool` representing if the timer is 0 or not
+
+    void timerSetDefaultIfEmpty();
+Sets the timer to the default value of `1:00` if no input has been detected for the timer.
+
+    void timerAddSeconds(int8_t seconds);
+ - `int8_t seconds`: Number of seconds to add (or subtract)
+
+Performs addition/subtraction on the timer value.<br />
+It clamps the result to `[00:00, 99:99]` while also normalising the seconds place to be &lt;60 if possible.
+
+    void timerInput(uint8_t n);
+ - `uint8_t n`: Number to input. Must be between `0` and `9` inclusive
+
+Inputs the timer value one digit at a time.<br />
+Tracks how many digits have been entered and ignores any further input after four digits have been entered.<br />
+Leading zeros are ignored and do not contribute to the input counter.
