@@ -26,6 +26,7 @@ digraph {
 
         "lib/events" -> "lib/motor"
         "lib/events" -> "project/main"
+        "lib/events" -> "project/display"
         "lib/events" -> "project/magnetron"
         "lib/events" -> "project/turntable"
         "project/beeper" -> "project/beeper"
@@ -52,6 +53,7 @@ digraph {
         "project/main" -> "hardware/leds"
         "project/beeper" -> "hardware/speaker"
         "project/display" -> "lib/lcd"
+        "project/display" -> "hardware/lcd-backlight"
         "project/magnetron" -> "lib/motor"
         "project/timer" -> "project/main"
         "project/timer" -> "project/display"
