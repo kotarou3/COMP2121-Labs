@@ -6,9 +6,9 @@
 #include "events.h"
 #include "beeper.h"
 
-#define BEEP_PWM_PERIOD 512 // In clock cycles (= TOP)
-// 512 produces a 31250 Hz wave (for 16 MHz F_CPU) so the PWM is above the audible range
-// 512 also means audio is 9-bit depth and 31250 Hz sample rate
+#define BEEP_PWM_PERIOD 511 // In clock cycles (= TOP)
+// 511 produces a 31250 Hz wave (for 16 MHz F_CPU) so the PWM is above the audible range
+// 511 also means audio is 9-bit depth and 31250 Hz sample rate
 
 #define BEEP_PWM_OUTPUT(reg) reg##H
 #define BEEP_PWM_OUTPUT_BIT PH5
